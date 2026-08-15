@@ -9,4 +9,9 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
+    // Declared here so the convention plugins can apply them by id; without
+    // this the plugin is absent from the build classpath and applying it
+    // fails with "Plugin with id '...' not found".
+    alias(libs.plugins.room) apply false
+    alias(libs.plugins.protobuf) apply false
 }
