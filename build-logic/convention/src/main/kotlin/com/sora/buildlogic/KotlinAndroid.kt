@@ -45,13 +45,14 @@ internal fun Project.configureKotlinAndroid(
     // Configure the Kotlin compiler via the task type rather than the project
     // extension: the extension's DSL shape varies across Kotlin Gradle Plugin
     // versions, whereas KotlinCompile.compilerOptions is stable.
-    tasks.withType(KotlinCompile::class.java).configureEach { task ->
-        task.compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-            freeCompilerArgs.addAll(
-                // Several AndroidX APIs used across the codebase are opt-in.
-                "-opt-in=kotlin.RequiresOptIn",
-            )
-        }
+    // `compilerOptions` takes an extension-function lambda with no parameter,
+    // so `configureEach` must use an implicit `it` receiver rather than a
+    // named `task ->` parameter.
+    tasks.withType(KotlinCompile::class.java).configureEach {
+        it.compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+        it.compilerOptions.freeCompilerArgs.addAll(
+            // Several AndroidX APIs used across the codebase are opt-in.
+            "-opt-in=kotlin.RequiresOptIn",
+        )
     }
 }

@@ -23,10 +23,8 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
         }
 
         // Task-based configuration; see KotlinAndroid.kt for the rationale.
-        tasks.withType(KotlinCompile::class.java).configureEach { task ->
-            task.compilerOptions {
-                jvmTarget.set(JvmTarget.JVM_17)
-            }
+        tasks.withType(KotlinCompile::class.java).configureEach {
+            it.compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 }
