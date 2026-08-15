@@ -5,6 +5,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Required: the KSP dependency in convention/build.gradle.kts is a
+        // plugin *marker* artifact, which is published to the Gradle Plugin
+        // Portal rather than to Maven Central.
+        gradlePluginPortal()
     }
     versionCatalogs {
         create("libs") {
