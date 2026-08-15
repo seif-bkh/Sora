@@ -35,6 +35,7 @@ include(":core:core-common")
 include(":core:core-model")
 include(":core:core-database")
 include(":core:core-datastore")
+include(":core:core-datastore-proto")
 include(":core:core-network")
 
 // --- features ------------------------------------------------------------
