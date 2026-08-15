@@ -1,62 +1,56 @@
-# AGENTS.md — Operating Instructions for Agentic Contributors
+# AGENTS.md — Rules of Engagement
 
-This file governs how any agentic coding tool (Claude Code or equivalent) must behave while working on this repository. It applies in addition to, not instead of, the project brief in `PROJECT_BRIEF.md` / the original spec document. If anything here conflicts with the project brief, the process rules in this file take precedence, since they govern *how* work happens rather than *what* is being built.
-
----
-
-## 1. Plan confirmation is mandatory before execution
-
-Before writing code, running a build, creating files, or making any repository change for a new phase, task, or non-trivial fix:
-
-- Produce a short written plan: what you intend to do, which files/modules will be touched, and any assumptions or decisions you're making.
-- Present this plan to the user and explicitly wait for confirmation before proceeding.
-- Do not batch multiple phases or unrelated changes into a single plan. One plan per coherent unit of work (e.g., "Phase 3: local library scanning" is one plan; "Phase 3 and Phase 4" is two).
-- If the user requests changes to the plan, revise and re-confirm before executing — do not partially execute an unconfirmed plan.
-- Small, obviously reversible actions (reading files, searching, inspecting the repo state) do not require confirmation. Anything that writes, deletes, commits, pushes, or modifies CI/build configuration does.
-- If a phase's scope shifts materially once you're inside it (e.g., you discover the matching engine needs a schema change), stop and re-confirm rather than silently expanding scope.
-
-## 2. Continuous Integration setup
-
-- Generate and maintain a `.github/workflows/ci.yml` GitHub Actions workflow for this Android project. At minimum it must:
-  - Trigger on `push` and `pull_request` to the main branch.
-  - Set up JDK (Temurin, version matching the project's Gradle/AGP requirements) and cache Gradle dependencies.
-  - Run `./gradlew build` and `./gradlew test` (unit tests) for all modules.
-  - Run lint (`./gradlew lint`) and fail the workflow on new lint errors introduced by the change.
-  - Run the filename-parser and fuzzy-matching-scorer unit tests explicitly as a named step, since the project brief calls these out as highest-risk components.
-  - Cache the Gradle wheel/build cache between runs to keep CI time reasonable.
-- Any change to build configuration, module structure, or dependencies must be reflected in `ci.yml` in the same plan/commit — do not let CI config drift from the actual build.
-- Present the CI workflow as part of a plan (per Section 1) before committing it, same as any other change.
-
-## 3. Push, monitor, and iterate until green
-
-After committing and pushing any change:
-
-- Push to the remote branch.
-- Poll/check the resulting GitHub Actions run status (via `gh run watch`, `gh run list`, or equivalent) until it reaches a terminal state (success or failure). Do not consider a task complete while a triggered workflow run is still pending or in progress.
-- If the run fails:
-  - Fetch the failure logs, diagnose the root cause, and produce a plan for the fix (per Section 1 — this still requires confirmation before executing, unless the user has explicitly pre-approved autonomous fix-iteration for this session).
-  - Apply the fix, commit, push, and re-check the workflow again.
-  - Repeat until the workflow succeeds.
-- Never mark a phase or task as "done" while the corresponding CI run is red. If a fix isn't obvious after a reasonable number of iterations (e.g., 3 failed attempts on the same error), stop and surface the issue to the user with your diagnosis rather than continuing to guess.
-- Do not disable, skip, or weaken a failing test/lint check as a means of making CI pass unless the user explicitly approves that as the fix.
-
-## 4. Skills
-
-- Before starting any new phase or non-trivial task, check whether the user has provided or referenced skills relevant to the work — treat this as part of the planning step in Section 1, not a separate optional check.
-- Skills the user provides may cover: Android/Kotlin conventions, Compose UI patterns, Room/migration practices, AniList API usage, CI/CD conventions, git workflow conventions, or anything else relevant to this project. Do not assume the list is limited to what's been mentioned so far — check for newly provided skills each session.
-- If a relevant skill exists, follow its guidance over your own default assumptions or general training knowledge, since skills encode the user's specific, hard-won preferences and environment constraints.
-- If no relevant skill is found for a given task, proceed using the conventions established elsewhere in this file and the project brief, and note in the plan that no matching skill was found.
-- If a skill and an instruction in this file or the project brief conflict, surface the conflict to the user as part of the plan rather than silently picking one.
+This is a binding contract for any agentic coding tool working on this repository (Sora — Android anime/manga client). It contains rules only. Follow every rule on every task, without exception, unless the user explicitly overrides a specific rule in a specific instance.
 
 ---
 
-## Summary of the loop for every unit of work
+## 1. CI Workflow — Manual Install Only
 
-1. Check for relevant user-provided skills.
-2. Write a plan (scope, files touched, assumptions).
-3. Present the plan and wait for user confirmation.
-4. Execute only after confirmation.
-5. Commit and push.
-6. Watch CI to a terminal state.
-7. If red: diagnose, plan the fix (confirm per step 3 unless pre-approved), fix, push, re-check. Repeat until green.
-8. Only then consider the unit of work complete.
+1. The **first action** on this repository, before any other setup or planning, is to generate a complete `.github/workflows/ci.yml` file and present it to the user as a file for them to add manually.
+2. Never attempt to create, push, or commit `.github/workflows/*` directly to the repository via git or any tool — GitHub App permissions restrict agents from writing workflow files, and attempting it will fail or be rejected. Always output the YAML content for the user to copy in themselves.
+3. Any future change to CI configuration — new steps, new triggers, dependency/version bumps in the workflow, new jobs — must be delivered the same way: generate the updated YAML, present it, and instruct the user to apply it manually. Never assume a workflow file change has taken effect until the user confirms they've added it.
+4. Do not modify, delete, or rename `.github/workflows/*` files directly under any circumstance, even if a task seems to require it. Surface the needed change as an instruction to the user instead.
+5. Keep the CI workflow in sync conceptually with the actual build (module list, test targets, lint) — if the project structure changes in a way that would make the existing `ci.yml` stale, flag this immediately and produce the updated YAML for manual replacement, don't let it silently drift.
+
+## 2. Planning & Review — Required Before Any Change
+
+6. Before writing code, creating files, editing files, or running any build/test command, produce a short written plan: what will change, which files/modules are affected, and any assumptions being made.
+7. Present the plan to the user and wait for explicit confirmation before executing it. Do not proceed on an unconfirmed plan.
+8. One plan per coherent unit of work. Do not bundle unrelated changes or multiple phases into a single plan.
+9. If scope shifts materially mid-execution (a discovered dependency, a needed schema change, an unplanned file touch), stop and get re-confirmation rather than expanding scope silently.
+10. Read-only actions (viewing files, searching the repo, inspecting state) do not require a plan or confirmation. Anything that writes, deletes, or modifies state does.
+11. If the user requests changes to a plan, revise and re-present it — do not partially execute the old version while incorporating new asks.
+
+## 3. Skills
+
+12. Before planning any new task, check whether the user has provided or referenced skills relevant to the work.
+13. If a relevant skill exists, its guidance overrides default assumptions or general training knowledge.
+14. If a skill conflicts with another rule in this file or with the project brief, surface the conflict to the user as part of the plan — do not silently resolve it.
+
+## 4. Scope Discipline
+
+15. Do not implement anything explicitly marked out-of-scope in the project brief (e.g., torrent streaming) even if it seems like a natural extension of a current task.
+16. Do not introduce libraries, frameworks, or architectural patterns not specified in the project brief's tech stack without flagging the substitution and getting confirmation first.
+17. Do not perform speculative refactors, "while I'm here" cleanups, or unrelated improvements inside a plan scoped to something else. Raise them as a separate, future plan instead.
+18. When a decision is ambiguous but low-cost to reverse, make a reasonable default, document it in `DECISIONS.md`, and continue — don't block progress on trivial ambiguity. When a decision is expensive to reverse (schema shape, module boundaries, sync strategy), stop and ask.
+
+## 5. Code Quality & Safety
+
+19. All network and disk I/O must be off the main thread — no exceptions, enforced via StrictMode in debug builds.
+20. No hardcoded secrets, tokens, or API keys in source at any point, including in scratch/debug code.
+21. Every commit must leave the repository in a buildable state — do not commit partially-working intermediate states as if they were complete.
+22. Write unit tests for the filename parser (including chapter/volume CBZ detection) and the fuzzy-matching scorer as part of the plan that implements them, not as a deferred follow-up.
+23. Never weaken, skip, or delete a test or lint rule to make a build pass unless the user explicitly approves it as the fix.
+
+## 6. Git Hygiene
+
+24. Commit messages describe what changed and why, scoped to the same unit of work as the plan that produced them.
+25. Do not force-push, rewrite shared history, or delete branches without explicit user instruction.
+26. Push only after the user has confirmed the plan and the resulting change is complete and buildable.
+27. Never attempt to bypass GitHub App / permission restrictions through alternate tooling, scripts, or workarounds — if an action is restricted, tell the user and let them perform it.
+
+## 7. Communication
+
+28. State assumptions explicitly wherever they're made, in the plan or in `DECISIONS.md` — never leave an undocumented judgment call.
+29. If uncertain whether a rule applies to a given situation, default to asking rather than guessing.
+30. Never mark a task, phase, or plan as complete while any part of it — CI status the user hasn't confirmed, an unconfirmed plan step, an unresolved ambiguity — is still open.
