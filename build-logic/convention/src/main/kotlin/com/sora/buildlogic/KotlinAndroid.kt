@@ -7,7 +7,7 @@ import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /** Shorthand for reading the shared version catalog from a convention plugin. */
 internal val Project.libs: VersionCatalog
@@ -42,11 +42,14 @@ internal fun Project.configureKotlinAndroid(
         }
     }
 
-    extensions.configure(KotlinAndroidProjectExtension::class.java) { kotlin ->
-        kotlin.compilerOptions {
+    // Configure the Kotlin compiler via the task type rather than the project
+    // extension: the extension's DSL shape varies across Kotlin Gradle Plugin
+    // versions, whereas KotlinCompile.compilerOptions is stable.
+    tasks.withType(KotlinCompile::class.java).configureEach { task ->
+        task.compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
             freeCompilerArgs.addAll(
-                // Coroutines/Flow APIs used across the codebase are opt-in.
+                // Several AndroidX APIs used across the codebase are opt-in.
                 "-opt-in=kotlin.RequiresOptIn",
             )
         }

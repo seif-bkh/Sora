@@ -4,7 +4,7 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /**
  * Pure-JVM Kotlin module (no Android framework dependency).
@@ -22,8 +22,9 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             targetCompatibility = JavaVersion.VERSION_17
         }
 
-        extensions.configure<KotlinJvmProjectExtension> {
-            compilerOptions {
+        // Task-based configuration; see KotlinAndroid.kt for the rationale.
+        tasks.withType(KotlinCompile::class.java).configureEach { task ->
+            task.compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_17)
             }
         }

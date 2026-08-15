@@ -18,9 +18,14 @@
 [versions]
 # --- Build tooling -------------------------------------------------------
 agp = "8.13.0"
-kotlin = "2.2.21"
-ksp = "2.2.21-2.0.5"          # must track `kotlin` exactly
-hilt = "2.57.1"
+# Kotlin MUST match the version embedded in the Gradle distribution (8.13
+# embeds Kotlin 2.0.21). The `kotlin-dsl` plugin compiles build-logic with
+# Gradle's embedded compiler, which cannot read metadata produced by a newer
+# Kotlin - so a newer Kotlin here fails the build at build-logic compile time.
+# Bumping Kotlin therefore requires bumping Gradle in lockstep.
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.28"         # must track `kotlin` exactly
+hilt = "2.52"
 
 # --- SDK levels ----------------------------------------------------------
 # minSdk 26 per the project brief; target/compile 36 (Android 16), the Play
@@ -37,6 +42,8 @@ androidxSplashscreen = "1.0.1"
 
 # --- Compose -------------------------------------------------------------
 # The BOM governs all androidx.compose:* artifact versions.
+# Compose BOM chosen for Kotlin 2.0.21 compatibility; the Compose compiler
+# plugin is versioned with Kotlin itself.
 composeBom = "2024.12.01"
 androidxNavigation = "2.8.5"
 # Material3 adaptive drives the WindowSizeClass-based layouts required by the
