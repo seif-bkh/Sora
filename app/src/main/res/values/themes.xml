@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Base theme.
+
+        The visible UI is entirely Compose (SoraTheme), so this XML theme only
+        governs the launch window: the splash screen shown between process
+        start and the first Compose frame.
+
+        Theme.SplashScreen comes from androidx.core:core-splashscreen, which
+        backports the Android 12 SplashScreen API down to API 21 - so the same
+        theme works across the whole minSdk 26+ range without a values-v31
+        variant.
+    -->
+    <style name="Theme.Sora.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+
+        <!-- The theme the Activity switches to once the splash is done. -->
+        <item name="postSplashScreenTheme">@style/Theme.Sora</item>
+    </style>
+
+    <style name="Theme.Sora" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+
+</resources>

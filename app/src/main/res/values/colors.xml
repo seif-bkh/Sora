@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Brand palette, mirrored from the sky gradient in the launcher icon.
+        The Compose theme has its own copies in ui/theme/Color.kt; these exist
+        for XML-only contexts (splash screen window background, notification
+        accent colour).
+    -->
+    <color name="sora_sky_top">#5BA3D0</color>
+    <color name="sora_sky_mid">#4A90E2</color>
+    <color name="sora_sky_deep">#2C5AA0</color>
+
+    <!-- Splash background. Matches the dark theme surface so launch does not
+         flash a bright screen before the (dark-by-default) UI appears. -->
+    <color name="splash_background">#111318</color>
+</resources>

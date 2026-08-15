@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        INTERNET is needed for the AniList GraphQL API (Phase 2) and the
+        WebDAV/HTTP server source (Phase 7). Local content is read through the
+        Storage Access Framework, which grants access per-tree at runtime and
+        needs no storage permission - that is why READ_EXTERNAL_STORAGE and
+        friends are deliberately absent (project brief: scoped storage, no
+        legacy storage permissions).
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:name=".SoraApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Sora.Splash"
+        android:enableOnBackInvokedCallback="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Sora.Splash"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|density|uiMode">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                AniList OAuth2 redirect (Phase 2). The scheme comes from the
+                manifestPlaceholder in app/build.gradle.kts so it stays in sync
+                with BuildConfig.ANILIST_REDIRECT_URI.
+            -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="${anilistRedirectScheme}"
+                    android:host="auth" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

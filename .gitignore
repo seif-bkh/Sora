@@ -1,0 +1,33 @@
+# --- Gradle ---------------------------------------------------------------
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!build-logic/
+build-logic/*/build/
+
+# --- Android --------------------------------------------------------------
+# Contains the SDK path and the developer's AniList client id. Never commit.
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+release/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- IDE ------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# --- Keystores / secrets --------------------------------------------------
+*.jks
+*.keystore
+keystore.properties
+
+# --- Generated icon previews (tools/svg2vd/preview.py) --------------------
+/tools/svg2vd/preview-out/

@@ -1,0 +1,107 @@
+# ---------------------------------------------------------------------------
+# Sora — Gradle version catalog
+#
+# Single source of truth for every dependency version. Modules reference
+# aliases (libs.xxx) and never hardcode a version string.
+#
+# Version choices are pinned deliberately:
+#   * AGP 8.13 is the final 8.x line: supports compileSdk 36, requires
+#     Gradle 8.13 and JDK 17. AGP 9.x is avoided for now - this project can
+#     only be compiled via CI, so a major-version migration is expensive to
+#     debug one round-trip at a time. Revisit post-MVP.
+#   * Kotlin 2.x uses the separate Compose Compiler Gradle plugin, which is
+#     versioned in lockstep with Kotlin itself.
+#   * KSP versions are Kotlin-coupled: <kotlin>-<ksp> must match the Kotlin
+#     version exactly or the build fails at configuration time.
+# ---------------------------------------------------------------------------
+
+[versions]
+# --- Build tooling -------------------------------------------------------
+agp = "8.13.0"
+kotlin = "2.2.21"
+ksp = "2.2.21-2.0.5"          # must track `kotlin` exactly
+hilt = "2.57.1"
+
+# --- SDK levels ----------------------------------------------------------
+# minSdk 26 per the project brief; target/compile 36 (Android 16), the Play
+# requirement from 31 Aug 2026.
+compileSdk = "36"
+minSdk = "26"
+targetSdk = "36"
+
+# --- AndroidX core -------------------------------------------------------
+androidxCore = "1.15.0"
+androidxActivity = "1.9.3"
+androidxLifecycle = "2.8.7"
+androidxSplashscreen = "1.0.1"
+
+# --- Compose -------------------------------------------------------------
+# The BOM governs all androidx.compose:* artifact versions.
+composeBom = "2024.12.01"
+androidxNavigation = "2.8.5"
+# Material3 adaptive drives the WindowSizeClass-based layouts required by the
+# brief (bottom nav on compact, nav rail on medium/expanded).
+androidxAdaptive = "1.0.0"
+androidxWindow = "1.3.0"
+
+# --- Testing -------------------------------------------------------------
+junit4 = "4.13.2"
+androidxTestExt = "1.2.1"
+androidxEspresso = "3.6.1"
+
+[libraries]
+# --- AndroidX core -------------------------------------------------------
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidxSplashscreen" }
+
+# --- Compose -------------------------------------------------------------
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+androidx-compose-material3-window-size = { module = "androidx.compose.material3:material3-window-size-class" }
+androidx-compose-material3-adaptive-navigation-suite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite" }
+androidx-window = { module = "androidx.window:window", version.ref = "androidxWindow" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
+
+# --- DI ------------------------------------------------------------------
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+
+# --- Testing -------------------------------------------------------------
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExt" }
+androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidxEspresso" }
+
+# Referenced so the version catalog can expose AGP/KSP to the build-logic
+# convention plugins as regular dependencies.
+android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+ksp-gradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+# Required from Kotlin 2.0 onward: the Compose compiler ships as its own
+# plugin rather than a composeOptions block.
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+
+# --- Sora convention plugins (defined in build-logic/) -------------------
+sora-android-application = { id = "sora.android.application" }
+sora-android-library = { id = "sora.android.library" }
+sora-android-library-compose = { id = "sora.android.library.compose" }
+sora-android-feature = { id = "sora.android.feature" }
+sora-android-hilt = { id = "sora.android.hilt" }
+sora-jvm-library = { id = "sora.jvm.library" }
