@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Adaptive Icon Foreground Layer
+  ──────────────────────────────────────
+  Canvas:        108×108dp (foreground layer)
+  Visible area:  centre 72dp (66%), launcher masks the rest
+  Mark bounds:   ~18–90dp in both axes (centred, 72dp span)
+  Elements:      sky gradient fill + white frame / horizon / kanji
+  Transparency:  outer ring beyond the safe zone is fully transparent
+
+  Usage:
+    <adaptive-icon>
+      <foreground>@drawable/ic_launcher_foreground</foreground>
+      …
+    </adaptive-icon>
+
+  SVG → VectorDrawable:  vectortool / Android Studio (no manual conversion needed).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+
+  <defs>
+    <!-- Sky gradient: dawn → midday → dusk -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#5BA3D0"/>
+      <stop offset="55%"  stop-color="#4A90E2"/>
+      <stop offset="100%" stop-color="#2C5AA0" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sky fill (confined to the 72dp safe zone via a squircle clip) -->
+  <clipPath id="safe">
+    <rect x="16" y="16" width="76" height="76" rx="18"/>
+  </clipPath>
+  <rect x="16" y="16" width="76" height="76" fill="url(#sky)" clip-path="url(#safe)"/>
+
+  <!-- Faint 空 watermark in the upper sky -->
+  <text x="54" y="50"
+        text-anchor="middle"
+        font-family="'Noto Serif JP', serif"
+        font-weight="300"
+        font-size="38"
+        fill="#FFFFFF"
+        opacity="0.08"
+        letter-spacing="1">空</text>
+
+  <!-- Horizon line — golden-ratio division of the safe zone -->
+  <line x1="18" y1="63" x2="90" y2="63"
+        stroke="#FFFFFF"
+        stroke-width="0.8"
+        stroke-linecap="round"
+        opacity="0.7"/>
+
+  <!-- Floating 16 : 9 frame — the "window" into content -->
+  <!-- top=30, bottom=57  →  6dp above the horizon at 63 -->
+  <rect x="30" y="30" width="48" height="27" rx="2"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="1.5"/>
+
+  <!-- Small 空 signature — lower-right corner of the safe zone -->
+  <text x="80" y="83"
+        text-anchor="middle"
+        font-family="'Noto Serif JP', serif"
+        font-weight="400"
+        font-size="10"
+        fill="#FFFFFF"
+        opacity="0.55"
+        letter-spacing="0.5">空</text>
+
+</svg>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Themed-Icon Monochrome Layer  (Android 13+)
+  ───────────────────────────────────────────────────
+  Canvas:        108×108dp
+  Safe zone:     centre 72dp (same as foreground)
+  Fill:          Pure white (#FFFFFF) — alpha only
+                 The system tints this to the user's wallpaper palette.
+  All elements are rendered in a single colour so the alpha mask
+  is clean and tints uniformly.
+
+  Usage:
+    <adaptive-icon>
+      <monochrome>@drawable/ic_launcher_monochrome</monochrome>
+      …
+    </adaptive-icon>
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+
+  <!-- Floating 16 : 9 frame -->
+  <rect x="30" y="30" width="48" height="27" rx="2"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="1.5"/>
+
+  <!-- Horizon line -->
+  <line x1="18" y1="63" x2="90" y2="63"
+        stroke="#FFFFFF"
+        stroke-width="0.8"
+        stroke-linecap="round"/>
+
+  <!-- 空 watermark — raised opacity so it survives alpha-mask conversion -->
+  <text x="54" y="50"
+        text-anchor="middle"
+        font-family="'Noto Serif JP', serif"
+        font-weight="300"
+        font-size="38"
+        fill="#FFFFFF"
+        opacity="0.3"
+        letter-spacing="1">空</text>
+
+  <!-- 空 signature -->
+  <text x="80" y="83"
+        text-anchor="middle"
+        font-family="'Noto Serif JP', serif"
+        font-weight="400"
+        font-size="10"
+        fill="#FFFFFF"
+        letter-spacing="0.5">空</text>
+
+</svg>

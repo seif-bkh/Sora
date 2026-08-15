@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Wordmark Lockup  (Dark variant)
+  ──────────────────────────────────────
+  Use on:  light surfaces (white, #E8F0F8 mist, soft sky backgrounds)
+  Layout:  Identical to light variant — just colour flipped.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" width="200" height="50">
+
+  <text x="4" y="36"
+        font-family="'Inter', system-ui, -apple-system, sans-serif"
+        font-weight="500"
+        font-size="32"
+        fill="#1A1A1A"
+        letter-spacing="0.5">Sora</text>
+
+  <text x="138" y="36"
+        font-family="'Noto Serif JP', serif"
+        font-weight="300"
+        font-size="26"
+        fill="#1A1A1A"
+        opacity="0.45"
+        letter-spacing="1">空</text>
+
+</svg>

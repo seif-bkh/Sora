@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Notification Small Icon
+  ──────────────────────────────
+  Canvas:        24×24dp
+  Safe area:     22×22dp (1dp padding)
+  Content:       Floating 16:9 frame only — the sole element that remains
+                 legible at this size.  No horizon, no kanji (too fine).
+  Colour:        Pure white (#FFFFFF) on transparency.
+                 Android forces this to an alpha mask; colour is ignored.
+
+  Usage:
+    res/drawable/ic_notification.xml   (VectorDrawable)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+
+  <!-- Floating 16:9 frame — centred, fits within 22×22 safe area -->
+  <rect x="2" y="3" width="20" height="11" rx="1.5"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="1.5"/>
+
+  <!-- Small horizon tick — just a subtle ground reference -->
+  <line x1="6" y1="18" x2="18" y2="18"
+        stroke="#FFFFFF"
+        stroke-width="1"
+        stroke-linecap="round"/>
+
+</svg>

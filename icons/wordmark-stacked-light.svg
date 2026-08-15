@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Wordmark Lockup  (Stacked, light variant)
+  ─────────────────────────────────────────────────
+  Use on:  dark surfaces
+  Layout:  "Sora" centred above, 空 centred below
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70" width="120" height="70">
+
+  <text x="60" y="40"
+        text-anchor="middle"
+        font-family="'Inter', system-ui, -apple-system, sans-serif"
+        font-weight="500"
+        font-size="30"
+        fill="#FFFFFF"
+        letter-spacing="1">Sora</text>
+
+  <text x="60" y="62"
+        text-anchor="middle"
+        font-family="'Noto Serif JP', serif"
+        font-weight="300"
+        font-size="20"
+        fill="#FFFFFF"
+        opacity="0.55"
+        letter-spacing="4">空</text>
+
+</svg>

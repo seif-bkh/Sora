@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Adaptive Icon Background Layer
+  ──────────────────────────────────────
+  Canvas:       108×108dp
+  Fill:         Full-bleed sky gradient (#5BA3D0 → #4A90E2 → #2C5AA0)
+
+  If a flat colour is preferred, replace the gradient with:
+    <rect width="108" height="108" fill="#4A90E2"/>
+
+  Usage:
+    <adaptive-icon>
+      <background>@drawable/ic_launcher_background</background>
+      …
+    </adaptive-icon>
+
+  Brand-seed hex (for pre–Android-12 static palette): #4A90E2
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#5BA3D0"/>
+      <stop offset="55%"  stop-color="#4A90E2"/>
+      <stop offset="100%" stop-color="#2C5AA0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="108" height="108" fill="url(#sky)"/>
+
+</svg>

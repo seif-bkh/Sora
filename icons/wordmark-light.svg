@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sora — Wordmark Lockup  (Light / white variant)
+  ─────────────────────────────────────────────────
+  Use on:  dark surfaces (#0B1020, dark-charcoal #1A1A1A)
+  Layout:  "Sora" (Inter 500) + 空 (Noto Serif JP 300) to the right
+  Size:    viewBox auto-scales; text is sized in user-space units
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" width="200" height="50">
+
+  <text x="4" y="36"
+        font-family="'Inter', system-ui, -apple-system, sans-serif"
+        font-weight="500"
+        font-size="32"
+        fill="#FFFFFF"
+        letter-spacing="0.5">Sora</text>
+
+  <text x="138" y="36"
+        font-family="'Noto Serif JP', serif"
+        font-weight="300"
+        font-size="26"
+        fill="#FFFFFF"
+        opacity="0.6"
+        letter-spacing="1">空</text>
+
+</svg>
