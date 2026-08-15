@@ -2,9 +2,8 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 /**
  * Pure-JVM Kotlin module (no Android framework dependency).
@@ -17,14 +16,13 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         pluginManager.apply("org.jetbrains.kotlin.jvm")
 
-        extensions.configure<JavaPluginExtension> {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
+        // Extensions are fetched and configured directly rather than through
+        // configuration lambdas; see KotlinAndroid.kt for the rationale.
+        val java = extensions.getByType(JavaPluginExtension::class.java)
+        java.sourceCompatibility = JavaVersion.VERSION_17
+        java.targetCompatibility = JavaVersion.VERSION_17
 
-        // Task-based configuration; see KotlinAndroid.kt for the rationale.
-        tasks.withType(KotlinCompile::class.java).configureEach {
-            it.compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
-        }
+        val kotlin = extensions.getByType(KotlinJvmProjectExtension::class.java)
+        kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
     }
 }

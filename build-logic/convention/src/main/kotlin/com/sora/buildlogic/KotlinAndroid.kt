@@ -7,7 +7,7 @@ import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
 /** Shorthand for reading the shared version catalog from a convention plugin. */
 internal val Project.libs: VersionCatalog
@@ -42,17 +42,23 @@ internal fun Project.configureKotlinAndroid(
         }
     }
 
-    // Configure the Kotlin compiler via the task type rather than the project
-    // extension: the extension's DSL shape varies across Kotlin Gradle Plugin
-    // versions, whereas KotlinCompile.compilerOptions is stable.
-    // `compilerOptions` takes an extension-function lambda with no parameter,
-    // so `configureEach` must use an implicit `it` receiver rather than a
-    // named `task ->` parameter.
-    tasks.withType(KotlinCompile::class.java).configureEach {
-        it.compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
-        it.compilerOptions.freeCompilerArgs.addAll(
-            // Several AndroidX APIs used across the codebase are opt-in.
-            "-opt-in=kotlin.RequiresOptIn",
-        )
-    }
+    configureKotlinCompiler()
+}
+
+/**
+ * Shared Kotlin compiler options for Android modules.
+ *
+ * Fetches the extension with getByType and configures the returned object
+ * directly. Deliberately avoids configuration lambdas: Gradle's Kotlin DSL
+ * exposes both receiver-style (`T.() -> Unit`) and Action-style
+ * (`(T) -> Unit`) overloads depending on the API and version, and picking the
+ * wrong shape is a compile error. Reading the object avoids the question.
+ */
+internal fun Project.configureKotlinCompiler() {
+    val kotlin = extensions.getByType(KotlinAndroidProjectExtension::class.java)
+    kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    kotlin.compilerOptions.freeCompilerArgs.add(
+        // Several AndroidX APIs used across the codebase are opt-in.
+        "-opt-in=kotlin.RequiresOptIn",
+    )
 }
