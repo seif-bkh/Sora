@@ -28,8 +28,12 @@ class AndroidRoomConventionPlugin : Plugin<Project> {
         room.schemaDirectory("$projectDir/schemas")
 
         dependencies {
-            add("implementation", libs.findLibrary("room-runtime").get())
-            add("implementation", libs.findLibrary("room-ktx").get())
+            // `api`: SoraDatabase extends RoomDatabase, so the Room runtime
+            // is part of this module's public API. With `implementation`,
+            // consumers cannot resolve the supertype ("Cannot access
+            // androidx.room.RoomDatabase which is a supertype of ...").
+            add("api", libs.findLibrary("room-runtime").get())
+            add("api", libs.findLibrary("room-ktx").get())
             add("ksp", libs.findLibrary("room-compiler").get())
             add("testImplementation", libs.findLibrary("room-testing").get())
         }

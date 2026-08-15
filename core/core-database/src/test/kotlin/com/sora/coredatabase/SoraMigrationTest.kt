@@ -24,6 +24,12 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class SoraMigrationTest {
 
+    /**
+     * Schema JSON is read from test assets. The build file maps
+     * `schemas/debug` (the Room plugin's variant output folder) as an assets
+     * source root, so the helper finds `<database-class>/<version>.json` at
+     * the location it expects by default.
+     */
     @get:Rule
     val helper: MigrationTestHelper = MigrationTestHelper(
         InstrumentationRegistry.getInstrumentation(),
