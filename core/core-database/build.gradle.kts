@@ -12,33 +12,41 @@ android {
     }
 
     /**
-     * MigrationTestHelper loads schema JSON from the test *assets*, not from
-     * the source tree, so the exported schema directory has to be registered
-     * as an asset source. Without this the test fails with
-     * FileNotFoundException even though the JSON is committed.
+     * MigrationTestHelper reads schema JSON from test *assets*, not from the
+     * source tree, and it needs BOTH versions: the committed v1 (to build the
+     * old database) and the v2 that Room generates at compile time (to
+     * validate the migration result).
      *
-     * The Room Gradle plugin writes into variant subfolders
-     * (schemas/<variant>/<database>/<version>.json). Mapping the *variant*
-     * folder as the assets root means the helper finds
-     * `<database>/<version>.json` where it looks by default.
+     * The Room Gradle plugin writes to `schemas/<variant>/<db>/<n>.json`, so
+     * the variant folder is mapped as the assets root and the helper finds
+     * `<db>/<n>.json` at the path it expects.
      */
     sourceSets {
         getByName("test") {
-            assets.srcDirs(files("$projectDir/schemas/debug"))
+            assets.srcDir(layout.projectDirectory.dir("schemas/debug"))
         }
         getByName("androidTest") {
-            assets.srcDirs(files("$projectDir/schemas/debug"))
+            assets.srcDir(layout.projectDirectory.dir("schemas/debug"))
         }
     }
 
-    // Room migration tests run on the JVM under Robolectric rather than on a
-    // device, so CI can execute them in the standard unit-test job.
     testOptions {
         unitTests {
+            // Robolectric needs merged Android resources and assets.
             isIncludeAndroidResources = true
         }
     }
 }
+
+/**
+ * The unit-test assets must be packaged only after Room has exported the
+ * current schema, otherwise the generated v2 JSON is missing from assets and
+ * `runMigrationsAndValidate` fails with FileNotFoundException.
+ */
+tasks.matching { it.name == "generateDebugUnitTestAssets" || it.name == "mergeDebugUnitTestAssets" }
+    .configureEach {
+        dependsOn(tasks.matching { it.name == "copyRoomSchemas" })
+    }
 
 dependencies {
     // Entities reference the shared enums (MediaType, UnitType, ...).
