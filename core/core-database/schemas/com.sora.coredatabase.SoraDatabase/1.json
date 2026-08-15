@@ -1,0 +1,322 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "3f8a1c47e2b9d05a6c1e4f7b28d3a690",
+    "entities": [
+      {
+        "tableName": "library_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `anilistId` INTEGER, `type` TEXT NOT NULL, `title` TEXT NOT NULL, `coverUrl` TEXT, `sourceType` TEXT NOT NULL, `rootPath` TEXT NOT NULL, `matchStatus` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "anilistId",
+            "columnName": "anilistId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coverUrl",
+            "columnName": "coverUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "sourceType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rootPath",
+            "columnName": "rootPath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matchStatus",
+            "columnName": "matchStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_library_entries_anilistId",
+            "unique": false,
+            "columnNames": [
+              "anilistId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_library_entries_anilistId` ON `${TABLE_NAME}` (`anilistId`)"
+          },
+          {
+            "name": "index_library_entries_rootPath",
+            "unique": true,
+            "columnNames": [
+              "rootPath"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_library_entries_rootPath` ON `${TABLE_NAME}` (`rootPath`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "media_units",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `libraryEntryId` TEXT NOT NULL, `unitType` TEXT NOT NULL, `number` REAL NOT NULL, `chapterRangeStart` REAL, `chapterRangeEnd` REAL, `title` TEXT, `path` TEXT NOT NULL, `totalPages` INTEGER, `currentPage` INTEGER, `isWatchedOrRead` INTEGER NOT NULL, `progressPercent` REAL NOT NULL, `lastPositionMs` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`libraryEntryId`) REFERENCES `library_entries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "libraryEntryId",
+            "columnName": "libraryEntryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitType",
+            "columnName": "unitType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "number",
+            "columnName": "number",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chapterRangeStart",
+            "columnName": "chapterRangeStart",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chapterRangeEnd",
+            "columnName": "chapterRangeEnd",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "path",
+            "columnName": "path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalPages",
+            "columnName": "totalPages",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currentPage",
+            "columnName": "currentPage",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isWatchedOrRead",
+            "columnName": "isWatchedOrRead",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "progressPercent",
+            "columnName": "progressPercent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastPositionMs",
+            "columnName": "lastPositionMs",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_media_units_libraryEntryId",
+            "unique": false,
+            "columnNames": [
+              "libraryEntryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_media_units_libraryEntryId` ON `${TABLE_NAME}` (`libraryEntryId`)"
+          },
+          {
+            "name": "index_media_units_path",
+            "unique": true,
+            "columnNames": [
+              "path"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_media_units_path` ON `${TABLE_NAME}` (`path`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "library_entries",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "libraryEntryId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "anilist_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`anilistId` INTEGER NOT NULL, `rawMetadataJson` TEXT NOT NULL, `lastFetchedEpochMs` INTEGER NOT NULL, PRIMARY KEY(`anilistId`))",
+        "fields": [
+          {
+            "fieldPath": "anilistId",
+            "columnName": "anilistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawMetadataJson",
+            "columnName": "rawMetadataJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastFetchedEpochMs",
+            "columnName": "lastFetchedEpochMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "anilistId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "match_candidates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `libraryEntryId` TEXT NOT NULL, `anilistId` INTEGER NOT NULL, `confidenceScore` REAL NOT NULL, `candidateTitle` TEXT, `candidateCoverUrl` TEXT, FOREIGN KEY(`libraryEntryId`) REFERENCES `library_entries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "libraryEntryId",
+            "columnName": "libraryEntryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "anilistId",
+            "columnName": "anilistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confidenceScore",
+            "columnName": "confidenceScore",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateTitle",
+            "columnName": "candidateTitle",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "candidateCoverUrl",
+            "columnName": "candidateCoverUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_match_candidates_libraryEntryId",
+            "unique": false,
+            "columnNames": [
+              "libraryEntryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_match_candidates_libraryEntryId` ON `${TABLE_NAME}` (`libraryEntryId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "library_entries",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "libraryEntryId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3f8a1c47e2b9d05a6c1e4f7b28d3a690')"
+    ]
+  }
+}

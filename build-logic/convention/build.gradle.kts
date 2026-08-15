@@ -21,6 +21,8 @@ dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
+    // Needed so AndroidRoomConventionPlugin can reference RoomExtension.
+    compileOnly(libs.room.gradlePlugin)
 }
 
 // Register each convention plugin under the id used in libs.versions.toml.
@@ -45,6 +47,10 @@ gradlePlugin {
         register("androidHilt") {
             id = "sora.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
+        }
+        register("androidRoom") {
+            id = "sora.android.room"
+            implementationClass = "AndroidRoomConventionPlugin"
         }
         register("jvmLibrary") {
             id = "sora.jvm.library"

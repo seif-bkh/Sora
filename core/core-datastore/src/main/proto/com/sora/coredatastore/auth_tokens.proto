@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.sora.coredatastore;
+
+option java_package = "com.sora.coredatastore";
+option java_multiple_files = true;
+
+// AniList OAuth credentials.
+//
+// Kept in a SEPARATE DataStore from UserSettings so the encrypted serializer
+// applies only to secrets. Mixing them would either leave the token in
+// plaintext or force every settings read through decryption.
+//
+// See EncryptedAuthTokensSerializer: this message is encrypted at rest.
+message AuthTokens {
+  // AniList implicit-grant access token. Never logged, never in a crash report.
+  string access_token = 1;
+
+  // Epoch millis at which the token expires. AniList implicit-grant tokens are
+  // long-lived (a year), but the value is returned by the flow so it is stored
+  // rather than assumed.
+  int64 expires_at_epoch_ms = 2;
+
+  // The authenticated AniList user, cached to avoid a Viewer query on launch.
+  int32 anilist_user_id = 3;
+  string anilist_user_name = 4;
+
+  // HTTP Basic Auth password for the WebDAV/HTTP server source. A credential,
+  // so it belongs in the encrypted store alongside the AniList token.
+  string server_password = 5;
+}

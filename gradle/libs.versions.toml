@@ -51,9 +51,30 @@ androidxNavigation = "2.8.5"
 androidxAdaptive = "1.0.0"
 androidxWindow = "1.3.0"
 
+# --- Persistence ---------------------------------------------------------
+# Room 2.7+ targets the Kotlin 2.0 language version, which matches our Kotlin
+# 2.0.21. It also requires KSP2.
+room = "2.7.2"
+androidxDataStore = "1.1.1"
+# Proto DataStore: protoc generates the schema classes, protobuf-javalite is
+# the runtime. The Gradle plugin must be >= 0.9.5 - earlier versions break
+# Gradle's configuration cache, which we have enabled.
+protobuf = "4.28.3"
+protobufPlugin = "0.9.5"
+# Tink encrypts the auth-token DataStore. Used directly rather than via
+# androidx.security:security-crypto (deprecated April 2025) or
+# androidx.datastore:datastore-tink (alpha only) - see DECISIONS.md.
+tink = "1.15.0"
+
+# --- Async ---------------------------------------------------------------
+kotlinxCoroutines = "1.9.0"
+
 # --- Testing -------------------------------------------------------------
 junit4 = "4.13.2"
+robolectric = "4.14.1"
+turbine = "1.2.0"
 androidxTestExt = "1.2.1"
+androidxTestCore = "1.6.1"
 androidxEspresso = "3.6.1"
 
 [libraries]
@@ -79,13 +100,33 @@ androidx-compose-material3-adaptive-navigation-suite = { module = "androidx.comp
 androidx-window = { module = "androidx.window:window", version.ref = "androidxWindow" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 
+# --- Persistence ---------------------------------------------------------
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidxDataStore" }
+protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
+protobuf-protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
+tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
+
+# --- Async ---------------------------------------------------------------
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+
 # --- DI ------------------------------------------------------------------
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
 
 # --- Testing -------------------------------------------------------------
 junit4 = { module = "junit:junit", version.ref = "junit4" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExt" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidxEspresso" }
 
 # Referenced so the version catalog can expose AGP/KSP to the build-logic
@@ -93,6 +134,7 @@ androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", vers
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -104,6 +146,8 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+room = { id = "androidx.room", version.ref = "room" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 
 # --- Sora convention plugins (defined in build-logic/) -------------------
 sora-android-application = { id = "sora.android.application" }
@@ -112,3 +156,4 @@ sora-android-library-compose = { id = "sora.android.library.compose" }
 sora-android-feature = { id = "sora.android.feature" }
 sora-android-hilt = { id = "sora.android.hilt" }
 sora-jvm-library = { id = "sora.jvm.library" }
+sora-android-room = { id = "sora.android.room" }

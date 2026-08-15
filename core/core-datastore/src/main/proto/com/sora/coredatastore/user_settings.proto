@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package com.sora.coredatastore;
+
+option java_package = "com.sora.coredatastore";
+option java_multiple_files = true;
+
+// User-facing settings.
+//
+// Proto3 field numbers are permanent: never reuse or renumber one, or an
+// existing install will read old bytes into the wrong field. Add new fields
+// with the next free number and `reserved` any that are removed.
+//
+// Proto3 scalars have no presence, so an unset field reads as its zero value.
+// Where "unset" must be distinguishable from a real value, enums declare an
+// explicit UNSPECIFIED = 0 member.
+
+enum ThemeMode {
+  // Follow the system setting. Zero value, but the app default is DARK -
+  // see DECISIONS.md; the brief specifies dark-by-default for this content
+  // domain, so the settings screen writes DARK explicitly on first run.
+  THEME_MODE_UNSPECIFIED = 0;
+  THEME_MODE_LIGHT = 1;
+  THEME_MODE_DARK = 2;
+  THEME_MODE_SYSTEM = 3;
+}
+
+enum ReadingMode {
+  READING_MODE_UNSPECIFIED = 0;
+  // Horizontal, page-by-page. Standard manga.
+  READING_MODE_PAGED = 1;
+  // Continuous vertical scroll. Webtoon.
+  READING_MODE_WEBTOON = 2;
+}
+
+message ServerConfig {
+  string base_url = 1;
+  string username = 2;
+  // Intentionally absent: the server password is a credential and lives in
+  // the encrypted AuthTokens store, not here.
+  bool enabled = 3;
+}
+
+message UserSettings {
+  ThemeMode theme_mode = 1;
+  bool use_dynamic_color = 2;
+
+  // Global default; a per-series override can be layered on later.
+  ReadingMode default_reading_mode = 3;
+
+  // Fraction of a video watched before progress is pushed to AniList.
+  // The brief suggests 0.9.
+  float playback_sync_threshold = 4;
+
+  bool sync_progress_to_anilist = 5;
+
+  // SAF tree URIs the user granted, persisted so scans can re-open them
+  // across process death.
+  repeated string local_library_tree_uris = 6;
+
+  ServerConfig server_config = 7;
+}
