@@ -4,9 +4,9 @@ A native Android client that unifies anime watching and manga reading from
 local storage and local-network servers into a single library, with metadata,
 discovery and progress tracking backed by [AniList](https://anilist.co).
 
-> **Status: Phase 1a.** Multi-module skeleton, branding and adaptive navigation
-> shell. See [DECISIONS.md](DECISIONS.md) for the running log of design calls
-> and the phase plan.
+> **Status: Phase 1b complete.** Multi-module skeleton, branding, adaptive
+> navigation shell, and the persistence layer (Room + Proto DataStore + DI).
+> See [DECISIONS.md](DECISIONS.md) for the running log of design calls.
 
 ---
 
@@ -66,6 +66,7 @@ core/
   core-model/           Plain data classes; the MediaSource interface
   core-database/        Room database, entities, DAOs, migrations
   core-datastore/       DataStore: settings and encrypted auth tokens
+  core-datastore-proto/ Protobuf schemas + generated classes (KSP-free)
   core-network/         Apollo (AniList GraphQL), OkHttp config
 feature/
   feature-auth/         AniList OAuth2 login
@@ -122,6 +123,11 @@ not bundled in the APK.
 ./gradlew testDebugUnitTest   # JVM unit tests, all modules
 ./gradlew lintDebug           # Android Lint
 ```
+
+Room migration and DAO tests run on the JVM via Robolectric, so no emulator is
+needed. Exported schemas under `core/core-database/schemas/` are committed
+because `MigrationTestHelper` reads them at test time - see that folder's
+README before touching them.
 
 CI runs assemble, unit tests and lint on every push. The workflow lives at
 `.github/workflows/ci.yml` and is maintained manually - see

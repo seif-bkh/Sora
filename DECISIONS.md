@@ -59,3 +59,41 @@ each with a one-line rationale. Newest phase last.
 - **Sub-chapter detection inside volume CBZs** (`ComicInfo.xml` parsing / OCR) — deferred post-MVP; the brief defers it and not all releases include the metadata.
 - **mpv-based fallback player** — not implemented; the player will sit behind a `VideoPlayerController` interface so a second implementation can be swapped in. HEVC 10-bit playback compatibility varies by device.
 - **Torrent sources** — out of scope entirely. `MediaSource` is designed so one could be added without touching player/reader/UI.
+
+---
+
+## Phase 1b — Persistence: Room, Proto DataStore, DI
+
+### Data layer
+
+| # | Decision | Rationale |
+|---|---|---|
+| 25 | **`LibraryEntry.lastConfirmedChapter` added to the brief's schema.** | The brief requires persisting the chapter number a user confirms when finishing a VOLUME unit "so future syncs for the same series have a reference point". Storing it on the series (not the unit) is what lets the next volume's dialog pre-fill an estimate. |
+| 26 | **`MatchCandidate` carries denormalised `candidateTitle` / `candidateCoverUrl`.** | The review picker shows five candidate posters per unmatched series. Without these, rendering the picker means one AniList round-trip per candidate, which would blow the 30 req/min limit during a first scan. |
+| 27 | **Enums persisted by name, not ordinal.** | Ordinals are positional: inserting a constant mid-enum would silently reinterpret every existing row. Names cost a few bytes and fail loudly instead. |
+| 28 | **Foreign keys with `ON DELETE CASCADE` from `MediaUnit`/`MatchCandidate` to `LibraryEntry`, plus indices on `rootPath`, `path`, `anilistId`.** | Deleting a series must not orphan its units. The indices back the incremental-rescan lookups ("have I seen this folder/file?"), which would otherwise be a table scan per filesystem entry. |
+| 29 | **No `fallbackToDestructiveMigration`.** | The library, confirmed matches and read positions are user effort. A missing migration must fail loudly rather than wipe them. |
+| 30 | **Database starts at version 2 with a real 1→2 migration.** | The brief requires "one trivial migration test". The 1→2 step adds `lastConfirmedChapter`, so the test exercises a genuine schema change rather than a synthetic no-op. |
+| 31 | **Exported schema JSON committed under `core-database/schemas/<variant>/`, and mapped in as a unit-test asset source.** | `MigrationTestHelper` reads schemas from test assets at runtime; without both the committed v1 and the generated v2 it fails with `FileNotFoundException`. |
+
+### Settings and credentials
+
+| # | Decision | Rationale |
+|---|---|---|
+| 32 | **Proto DataStore, as specified (user-confirmed over Preferences).** | Type-safe settings; migrating Preferences→Proto later would require a data migration on installed devices. |
+| 33 | **Two separate stores: plaintext `UserSettings`, encrypted `AuthTokens`.** | Mixing them would either leave the token in plaintext or force every settings read through decryption. |
+| 34 | **Tink used directly for encryption, not `androidx.security:security-crypto` or `androidx.datastore:datastore-tink`.** | `security-crypto` was deprecated in April 2025; `datastore-tink` (the official `AeadSerializer`) is alpha-only. Tink is what both wrap. AES256-GCM keyset wrapped by an Android Keystore master key. |
+| 35 | **AEAD associated data is the file name.** | Not secret; it binds the ciphertext to this file so another valid encrypted blob cannot be swapped in and decrypt successfully. |
+| 36 | **Decryption failure raises `CorruptionException` (→ signed-out default), not a crash.** | A wrong key or tampered file should force re-auth, not a launch crash loop. |
+| 37 | **Sign-out clears AniList credentials but preserves the server password.** | They are unrelated accounts; wiping the WebDAV password on AniList logout would silently break the user's local library. |
+| 38 | **Protobuf codegen isolated in `core-datastore-proto` (14 modules now, not 13).** | With protobuf and KSP in one module, KSP can run before protoc and Hilt sees `error.NonExistentClass` instead of `UserSettings`. A KSP-free codegen module removes the ordering conflict. Same structure Now in Android uses. |
+
+### Build and test
+
+| # | Decision | Rationale |
+|---|---|---|
+| 39 | **Robolectric added for DAO/migration tests (not named in the brief's stack).** | The brief requires a migration test but pins no Android-test runtime. Robolectric runs Room on the JVM, so migration and DAO tests execute in the normal CI unit-test job instead of needing an emulator. Flagged as a stack addition. |
+| 40 | **`robolectric.properties` pins the emulated SDK to 34.** | Robolectric ships no SDK jar for API 36 (our compileSdk) and fails at startup in `DefaultSdkPicker`. Test-runtime only; does not change what the app compiles or targets. |
+| 41 | **Room runtime exposed as `api`, not `implementation`.** | `SoraDatabase` extends `RoomDatabase`, so it is part of the module's public API; with `implementation`, consumers cannot resolve the supertype. |
+| 42 | **DI verified by calling `@Provides` functions directly rather than building a full Hilt test component.** | Missing bindings are already a compile-time error in Hilt. What needs runtime proof is that the database actually opens and the DataStore defaults are right - achievable without a custom test runner. |
+| 43 | **`SoraResult`/`SoraError` rather than `kotlin.Result`.** | `kotlin.Result` cannot be used in many return positions and models no loading state. A sealed error hierarchy also lets the UI distinguish "offline but cached" (silent) from "offline with no cache" (visible error), which the brief's offline mode needs. |
