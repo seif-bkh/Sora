@@ -164,26 +164,81 @@ internal fun Color.clampForAccent(): Color {
 }
 
 /**
- * Scales a colour towards a target relative luminance.
+ * Drives a colour to a target relative luminance, preserving hue where it can.
  *
- * A linear scale in sRGB space, which is approximate — but it preserves hue
- * (the perceptually important part here) and is far cheaper than a full
- * Lab/OkLab conversion for something recomputed as the user scrolls.
+ * The obvious implementation — scale every channel by `target / current` and
+ * clip to 1.0 — is wrong in two ways that only show up on real cover art, and
+ * both were caught by AmbientColorTest rather than by eye:
+ *
+ *  1. **Clipping destroys hue.** A near-black cover (say `#010203`) needs a
+ *     factor of ~460 to reach the floor; every channel clips to 1.0 and the
+ *     "ambient" colour comes out pure white. The whole feature silently dies
+ *     on exactly the dark covers where the glow matters most.
+ *
+ *  2. **Some hues cannot reach the target at all.** Luminance is weighted
+ *     0.2126/0.7152/0.0722, so fully saturated blue peaks at **0.0722** — far
+ *     below the 0.26 accent floor. No amount of scaling gets there, and the
+ *     contrast guarantee quietly fails.
+ *
+ * So: binary-search the scale factor up to the point where the brightest
+ * channel hits 1.0 (the most luminous version of this hue). If even that is
+ * too dark, the hue physically cannot carry the target, and the only remedy is
+ * to desaturate toward white — done by a second search so it desaturates as
+ * little as the target demands, keeping as much of the hue as possible.
+ *
+ * ~40 iterations of cheap float maths, called once per cover and cached, which
+ * is nothing next to the Palette pass that produced the input.
  */
 internal fun Color.adjustToLuminance(target: Float): Color {
     val current = luminance()
-    if (current <= 0f) {
+    val peak = max(red, max(green, blue))
+    if (current <= 0f || peak <= 0f) {
         // Pure black carries no hue to preserve; fall back to the brand accent.
         return Accent
     }
-    val factor = target / current
-    return Color(
-        red = min(1f, red * factor),
-        green = min(1f, green * factor),
-        blue = min(1f, blue * factor),
-        alpha = alpha,
-    )
+
+    // Brightest this hue gets before any channel clips.
+    val maxFactor = 1f / peak
+    val brightest = scaleBy(maxFactor)
+
+    return if (brightest.luminance() >= target) {
+        // Reachable without clipping: find the exact factor.
+        var lo = 0f
+        var hi = maxFactor
+        repeat(SEARCH_ITERATIONS) {
+            val mid = (lo + hi) / 2f
+            if (scaleBy(mid).luminance() < target) lo = mid else hi = mid
+        }
+        scaleBy((lo + hi) / 2f)
+    } else {
+        // Hue is too dark to reach the target at full brightness. Blend toward
+        // white by the smallest amount that gets there.
+        var lo = 0f
+        var hi = 1f
+        repeat(SEARCH_ITERATIONS) {
+            val mid = (lo + hi) / 2f
+            if (brightest.blendToWhite(mid).luminance() < target) lo = mid else hi = mid
+        }
+        brightest.blendToWhite((lo + hi) / 2f)
+    }
 }
+
+private fun Color.scaleBy(factor: Float): Color = Color(
+    red = min(1f, red * factor),
+    green = min(1f, green * factor),
+    blue = min(1f, blue * factor),
+    alpha = alpha,
+)
+
+private fun Color.blendToWhite(amount: Float): Color = Color(
+    red = red + (1f - red) * amount,
+    green = green + (1f - green) * amount,
+    blue = blue + (1f - blue) * amount,
+    alpha = alpha,
+)
+
+/** 20 halvings resolves the factor far below one 8-bit step. */
+private const val SEARCH_ITERATIONS = 20
 
 /** Guarantees a minimum contrast ratio against [Ink]; used by tests. */
 fun contrastRatio(foreground: Color, background: Color): Float {

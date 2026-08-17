@@ -84,6 +84,39 @@ class AmbientColorTest {
     }
 
     @Test
+    fun `a near-black cover does not wash out to white`() {
+        // REGRESSION: the first implementation scaled every channel by
+        // target/current and clipped at 1.0. #010203 needs a factor of ~460,
+        // so all three channels clipped and the "ambient" colour came out pure
+        // white — the feature died on exactly the dark covers where the glow
+        // matters most. Caught by CI, not by eye.
+        val accent = Color(0xFF010203).clampForAccent()
+        assertTrue(
+            "near-black cover washed out to $accent",
+            accent != Color.White && (accent.red < 0.99f || accent.green < 0.99f),
+        )
+        assertTrue(
+            "near-black cover lost its blue bias: $accent",
+            accent.blue > accent.red,
+        )
+    }
+
+    @Test
+    fun `saturated blue reaches the contrast floor it cannot scale to`() {
+        // REGRESSION: luminance is weighted 0.2126/0.7152/0.0722, so fully
+        // saturated blue peaks at 0.0722 — far below the 0.26 accent floor.
+        // No scale factor can reach it, so the clamp has to desaturate. Blue
+        // is a plausible dominant cover colour, and it is also the brand hue.
+        val accent = Color(0xFF0000FF).clampForAccent()
+        val ratio = contrastRatio(accent, Ink)
+        assertTrue("saturated blue only reached $ratio:1", ratio >= minimumContrast)
+        assertTrue(
+            "blue should stay the dominant channel after desaturation: $accent",
+            accent.blue >= accent.red && accent.blue >= accent.green,
+        )
+    }
+
+    @Test
     fun `pure black falls back to the brand accent`() {
         // Black has no hue to preserve, and a zero luminance that would make
         // the scaling factor infinite.
