@@ -1,0 +1,31 @@
+# Keeps the build context small and stops host state leaking into the image.
+# Note: the repository is bind-mounted at runtime, so excluding a path here
+# does NOT hide it from the build - it only keeps it out of the image layers.
+
+.git
+.github
+
+# Build outputs — regenerated inside the container.
+build/
+*/build/
+*/*/build/
+.gradle/
+.kotlin/
+
+# Host-specific. local.properties in particular usually carries an sdk.dir
+# pointing at a host SDK that does not exist in the container.
+local.properties
+.idea/
+*.iml
+
+# Secrets — must never enter an image layer.
+.env
+*.jks
+*.keystore
+keystore.properties
+
+# Artefacts
+*.apk
+*.aab
+
+.DS_Store

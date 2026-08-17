@@ -22,6 +22,21 @@ discovery and progress tracking backed by [AniList](https://anilist.co).
 
 ## Getting started
 
+### With Docker (no local JDK or Android SDK needed)
+
+```bash
+git clone https://github.com/seif-bkh/Sora.git
+cd Sora
+USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose build   # once
+docker compose run --rm build                             # -> debug APK
+```
+
+The APK appears at `app/build/outputs/apk/debug/app-debug.apk`. See
+[docker/README.md](docker/README.md) for the other services (`test`, `lint`,
+`check`, `shell`) and troubleshooting.
+
+### With a local toolchain
+
 ```bash
 git clone https://github.com/seif-bkh/Sora.git
 cd Sora

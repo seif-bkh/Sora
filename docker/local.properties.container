@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------------------
+# Container-only local.properties
+#
+# docker-compose.yml mounts this file READ-ONLY over /workspace/local.properties
+# so the container NEVER reads or writes the copy on your host machine.
+#
+# Why that matters: local.properties is git-ignored, and if you also use
+# Android Studio your host copy almost certainly contains something like
+#   sdk.dir=/Users/you/Library/Android/sdk
+# That path does not exist inside the container, and `sdk.dir` takes precedence
+# over the ANDROID_HOME environment variable, so the build would fail
+# immediately. Shadowing the file removes the conflict in both directions:
+# the container ignores your host SDK, and your host file is left untouched.
+#
+# There is deliberately NO sdk.dir line here - the image sets ANDROID_HOME
+# (/opt/android-sdk), which AGP uses when sdk.dir is absent.
+#
+# There is deliberately NO anilist.clientId here either. This file is committed,
+# and credentials must never be committed. Supply yours as an environment
+# variable instead; app/build.gradle.kts already falls back to it:
+#
+#   ANILIST_CLIENT_ID=12345 docker compose run --rm build
+#
+# or add it to a git-ignored .env file next to docker-compose.yml:
+#
+#   echo 'ANILIST_CLIENT_ID=12345' > .env
+#
+# Without one, the build still succeeds using the placeholder "0"; only the
+# AniList login flow will not work.
+# ---------------------------------------------------------------------------

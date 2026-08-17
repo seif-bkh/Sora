@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# Sora — local build environment
+#
+#   docker compose build                  # once (and after Dockerfile changes)
+#   docker compose run --rm build         # debug APK
+#   docker compose run --rm test          # unit tests
+#   docker compose run --rm lint          # Android Lint
+#   docker compose run --rm shell         # interactive shell
+#
+# The APK appears on the host at:
+#   app/build/outputs/apk/debug/app-debug.apk
+# ---------------------------------------------------------------------------
+
+# Shared definition; each service below overrides only its command.
+x-sora-common: &sora-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      # Matches container file ownership to your host account so build outputs
+      # are not root-owned. Docker substitutes these from your shell; the
+      # Dockerfile defaults to 1000 if they are unset (e.g. on Docker Desktop
+      # for macOS/Windows, where ownership is virtualised anyway).
+      USER_ID: ${USER_ID:-1000}
+      GROUP_ID: ${GROUP_ID:-1000}
+  image: sora-build:latest
+  working_dir: /workspace
+  environment:
+    # Passed through from your shell or a git-ignored .env file. Never baked
+    # into the image.
+    ANILIST_CLIENT_ID: ${ANILIST_CLIENT_ID:-}
+  volumes:
+    # The repository itself. Build outputs land back on the host.
+    - .:/workspace
+    # Shadows any host local.properties, which typically carries an sdk.dir
+    # pointing at a host SDK path that does not exist in the container.
+    # Read-only: the container cannot modify your file either.
+    - ./docker/local.properties.container:/workspace/local.properties:ro
+    # Named volume, NOT a bind mount: it is seeded from the image, so the
+    # pre-warmed Gradle distribution survives and dependencies persist between
+    # runs. Without this every build re-downloads several hundred MB.
+    - gradle-cache:/gradle-cache
+
+services:
+  # Default: assemble the debug APK.
+  build:
+    <<: *sora-common
+    command: ["./gradlew", "assembleDebug"]
+
+  test:
+    <<: *sora-common
+    command: ["./gradlew", "testDebugUnitTest"]
+
+  lint:
+    <<: *sora-common
+    command: ["./gradlew", "lintDebug"]
+
+  # Everything CI runs, in one go.
+  check:
+    <<: *sora-common
+    command: ["./gradlew", "assembleDebug", "testDebugUnitTest", "lintDebug"]
+
+  # Interactive shell for ad-hoc Gradle tasks.
+  shell:
+    <<: *sora-common
+    command: ["bash"]
+    stdin_open: true
+    tty: true
+
+volumes:
+  gradle-cache:

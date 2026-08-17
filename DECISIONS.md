@@ -97,3 +97,19 @@ each with a one-line rationale. Newest phase last.
 | 41 | **Room runtime exposed as `api`, not `implementation`.** | `SoraDatabase` extends `RoomDatabase`, so it is part of the module's public API; with `implementation`, consumers cannot resolve the supertype. |
 | 42 | **DI verified by calling `@Provides` functions directly rather than building a full Hilt test component.** | Missing bindings are already a compile-time error in Hilt. What needs runtime proof is that the database actually opens and the DataStore defaults are right - achievable without a custom test runner. |
 | 43 | **`SoraResult`/`SoraError` rather than `kotlin.Result`.** | `kotlin.Result` cannot be used in many return positions and models no loading state. A sealed error hierarchy also lets the UI distinguish "offline but cached" (silent) from "offline with no cache" (visible error), which the brief's offline mode needs. |
+
+---
+
+## Tooling — Dockerised local build environment
+
+| # | Decision | Rationale |
+|---|---|---|
+| 44 | **Docker build image added (`Dockerfile`, `docker-compose.yml`).** | Requested so an APK can be produced locally without installing a JDK or Android SDK. Additive only - no existing build file changed, and CI keeps using its own toolchain. |
+| 45 | **`docker/local.properties.container` is mounted read-only over `/workspace/local.properties`.** | `local.properties` is git-ignored and on a machine with Android Studio typically holds `sdk.dir=<host path>`, which does not exist in the container and takes precedence over `ANDROID_HOME` - the build would fail instantly. Shadowing isolates both directions: the container ignores the host SDK, and cannot modify the host file. Chosen over auto-editing the user's file. |
+| 46 | **Both build-tools 36.0.0 and 35.0.0 installed.** | `compileSdk` is 36, but AGP 8.13's *default* build-tools is 35.0.0. With only 36.0.0 present the first build stalls silently auto-downloading the other. |
+| 47 | **`USER_ID`/`GROUP_ID` build args.** | The repo is bind-mounted, so a root container leaves root-owned `build/` and `.gradle/` directories the host IDE cannot delete. |
+| 48 | **Gradle cache is a named volume, and the Gradle distribution is pre-warmed into the image.** | Docker seeds an empty *named volume* from the image (a bind mount would hide it), so the ~150 MB distribution is not re-fetched on first run and dependencies persist across runs. |
+| 49 | **`SHELL ["/bin/bash", "-o", "pipefail", "-c"]` in the Dockerfile.** | Docker's default RUN shell is `dash`, which rejects `set -o pipefail` ("Illegal option") - needed by the `yes \| sdkmanager --licenses` step. Caught by statically parsing every RUN block, since Docker is unavailable in the agent sandbox. |
+| 50 | **`.env` added to `.gitignore`.** | The compose setup suggests putting `ANILIST_CLIENT_ID` there; without the ignore rule that credential would be committable. |
+| 51 | **No emulator in the image.** | Requires KVM and `--privileged`, a poor trade for a build image. Build here, install to a device or host emulator with `adb install`. |
+| 52 | **UNVERIFIED: the image has not been built or run.** | Docker is not installed in the agent sandbox and all container registries are unreachable, so this could not be executed end to end. YAML, all 7 RUN blocks, and the entrypoint's three guard paths were validated statically instead. First real run is on the user's machine. |

@@ -28,6 +28,8 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+# Docker env file: holds ANILIST_CLIENT_ID for `docker compose`.
+.env
 
 # --- Generated icon previews (tools/svg2vd/preview.py) --------------------
 /tools/svg2vd/preview-out/
