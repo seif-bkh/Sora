@@ -146,6 +146,40 @@ class AmbientColorTest {
     }
 
     @Test
+    fun `clamping lands on the safe side of each bound`() {
+        // REGRESSION: sRGB Color holds 8 bits per channel, so the search
+        // cannot land exactly on a bound — one step is ~0.004 luminance, more
+        // than any tolerance worth asserting. Returning the midpoint of the
+        // final search interval quantised to just *under* the accent floor and
+        // failed CI. Which bound was crossed has to decide the rounding
+        // direction; these assert both directions with no tolerance at all.
+        assertTrue(
+            "raising to the floor undershot",
+            Color(0xFF101010).clampForAccent().luminance() >= ACCENT_MIN_LUMINANCE,
+        )
+        assertTrue(
+            "lowering to the ceiling overshot",
+            Color.White.clampForAccent().luminance() <= ACCENT_MAX_LUMINANCE,
+        )
+        assertTrue(
+            "glow floor undershot",
+            Color(0xFF010101).clampForGlow().luminance() >= GLOW_MIN_LUMINANCE,
+        )
+        assertTrue(
+            "glow ceiling overshot",
+            Color.White.clampForGlow().luminance() <= GLOW_MAX_LUMINANCE,
+        )
+    }
+
+    @Test
+    fun `colours already inside the band are left alone`() {
+        // No pointless requantisation: a colour that already satisfies the
+        // guarantee should come back bit-identical.
+        val inBand = Color(0xFF6699CC)
+        assertEquals(inBand, inBand.clampForAccent())
+    }
+
+    @Test
     fun `contrast ratio helper matches known WCAG values`() {
         // Sanity-check the helper itself: white on black is exactly 21:1.
         assertEquals(21f, contrastRatio(Color.White, Color.Black), 0.01f)

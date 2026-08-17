@@ -152,15 +152,32 @@ object AmbientColorExtractor {
 internal fun Color.clampForGlow(): Color {
     // A glow sits behind content on a near-black background: it must be dark
     // enough not to compete with the artwork, but not so dark it vanishes.
-    val target = luminance().coerceIn(GLOW_MIN_LUMINANCE, GLOW_MAX_LUMINANCE)
-    return adjustToLuminance(target).copy(alpha = GLOW_ALPHA)
+    val clamped = clampLuminance(GLOW_MIN_LUMINANCE, GLOW_MAX_LUMINANCE)
+    return clamped.copy(alpha = GLOW_ALPHA)
 }
 
-internal fun Color.clampForAccent(): Color {
+internal fun Color.clampForAccent(): Color =
     // An accent carries text and thin progress lines against [Ink], so it must
     // stay bright enough to hold contrast.
-    val target = luminance().coerceIn(ACCENT_MIN_LUMINANCE, ACCENT_MAX_LUMINANCE)
-    return adjustToLuminance(target)
+    clampLuminance(ACCENT_MIN_LUMINANCE, ACCENT_MAX_LUMINANCE)
+
+/**
+ * Brings luminance inside [[min], [max]], leaving colours already in range
+ * untouched.
+ *
+ * Which bound was crossed decides which way the result must be rounded, and
+ * that matters: sRGB [Color] is quantised to 8 bits per channel, so one step
+ * is worth roughly 0.004 luminance — larger than any tolerance worth
+ * asserting. Landing on the wrong side of a bound is what made the first fix
+ * fail CI (see [adjustToLuminance]).
+ */
+private fun Color.clampLuminance(min: Float, max: Float): Color {
+    val current = luminance()
+    return when {
+        current < min -> adjustToLuminance(min, atLeast = true)
+        current > max -> adjustToLuminance(max, atLeast = false)
+        else -> this
+    }
 }
 
 /**
@@ -186,10 +203,21 @@ internal fun Color.clampForAccent(): Color {
  * to desaturate toward white — done by a second search so it desaturates as
  * little as the target demands, keeping as much of the hue as possible.
  *
+ * A third subtlety, which also cost a CI round trip: sRGB [Color] holds 8 bits
+ * per channel, so the search cannot land exactly on [target] — one channel
+ * step is ~0.004 luminance. Returning the midpoint of the final interval can
+ * therefore quantise to just the wrong side of the bound. [atLeast] says which
+ * side is safe: the search maintains `lo` below the target and `hi` at or
+ * above it, so returning the correct endpoint (rather than the midpoint) is
+ * what makes the guarantee hold rather than nearly hold.
+ *
  * ~40 iterations of cheap float maths, called once per cover and cached, which
  * is nothing next to the Palette pass that produced the input.
+ *
+ * @param atLeast true when raising to a floor (result must be >= [target]),
+ *   false when lowering to a ceiling (result must be <= [target]).
  */
-internal fun Color.adjustToLuminance(target: Float): Color {
+internal fun Color.adjustToLuminance(target: Float, atLeast: Boolean = true): Color {
     val current = luminance()
     val peak = max(red, max(green, blue))
     if (current <= 0f || peak <= 0f) {
@@ -202,24 +230,27 @@ internal fun Color.adjustToLuminance(target: Float): Color {
     val brightest = scaleBy(maxFactor)
 
     return if (brightest.luminance() >= target) {
-        // Reachable without clipping: find the exact factor.
+        // Reachable without clipping: find the factor. `lo` stays below the
+        // target and `hi` at or above it, so the endpoint picked by [atLeast]
+        // is guaranteed to be on the safe side of the bound.
         var lo = 0f
         var hi = maxFactor
         repeat(SEARCH_ITERATIONS) {
             val mid = (lo + hi) / 2f
             if (scaleBy(mid).luminance() < target) lo = mid else hi = mid
         }
-        scaleBy((lo + hi) / 2f)
+        scaleBy(if (atLeast) hi else lo)
     } else {
         // Hue is too dark to reach the target at full brightness. Blend toward
-        // white by the smallest amount that gets there.
+        // white by the smallest amount that gets there. This branch only ever
+        // runs to raise luminance, so `hi` is always the safe endpoint.
         var lo = 0f
         var hi = 1f
         repeat(SEARCH_ITERATIONS) {
             val mid = (lo + hi) / 2f
             if (brightest.blendToWhite(mid).luminance() < target) lo = mid else hi = mid
         }
-        brightest.blendToWhite((lo + hi) / 2f)
+        brightest.blendToWhite(hi)
     }
 }
 
