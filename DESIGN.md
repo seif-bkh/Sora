@@ -2,6 +2,11 @@
 
 > **Status: proposed, pending approval.** No Compose code implements this yet.
 > Reference renders in `concepts/`.
+>
+> **Interactive version:** `design/showcase/index.html` — open it in a browser
+> (or `python3 -m http.server` from the repo root). It is the same spec, and it
+> pins down concrete values this document only described. Where the two differ,
+> the showcase wins and this file should be corrected.
 
 ---
 
@@ -170,14 +175,45 @@ accent, controls fade after 3s. Detailed in their own phases.
 > **Open question for the user:** ambient extraction largely overrides the
 > `#4A90E2` sky-blue in day-to-day use. Flagged in §8.
 
+### Design tokens (from `design/showcase/index.html`)
+
+The showcase fixes values that were previously adjectives. These map directly
+onto Compose `ColorScheme`, `Typography` and `Shapes`:
+
+| Token | Value | Notes |
+|---|---|---|
+| `ink` (base) | `#08090C` | Near-black app background |
+| `ink2` / `ink3` | `#0B0D12` / `#11141B` | Raised surfaces, used sparingly |
+| `paper` | `#E8E6DF` | Primary text. **Warm off-white, not pure `#FFFFFF`** |
+| `paper-muted` | `#A8A69F` | Secondary text |
+| `accent` | `#4A90E2` | Brand / static fallback |
+| `accent-soft` | `#7FB0EE` | Lighter accent, code and links |
+| secondary glow | `#B48CFF` | Violet, paired with accent in ambient washes |
+| Card radius | 16dp | |
+| Hero radius | 24dp | |
+| Hairline borders | white @ 4–10% | The dominant separator, instead of elevation |
+
+Two things the showcase establishes that the prose did not:
+
+- **Text is `#E8E6DF`, not white.** A warm off-white against near-black reads
+  as film rather than terminal, and lowers glare in a dark room.
+- **Violet `#B48CFF` as a companion to the blue.** Ambient washes interpolate
+  between the two rather than tinting a single hue.
+
 ### Type
 
 Deliberate two-family contrast, since single-family Material type is part of
 the generic look:
 
-- **Display/titles:** a thin high-contrast serif. Editorial, unexpected in this
-  category, and the reason the renders read as "premium" rather than "utility".
-- **Body/labels/UI:** the platform sans, small and quiet.
+- **Display/titles:** **Cormorant Garamond Light (300)** — a thin
+  high-contrast serif. Editorial, unexpected in this category, and the reason
+  the renders read as "premium" rather than "utility".
+- **Body/labels/UI:** **Inter** (400/500), small and quiet.
+- **Monospace:** **JetBrains Mono** for numerals and technical labels —
+  episode numbers, `142/310`, timestamps. Tabular figures stop progress
+  counters from jittering as digits change.
+- Small labels are uppercase with wide tracking (~0.22em); this is a
+  signature of the showcase and should carry into the app.
 - Titles are large. A series title at 32sp+ is a deliberate statement that
   content outranks chrome.
 
@@ -224,10 +260,14 @@ redesign is affordable now rather than after Phase 5.
 
 ## 8. Open questions
 
-1. **Brand blue** — ambient extraction will largely override `#4A90E2` in-app.
-   Keep extraction (recommended), or keep the blue dominant?
-2. **Serif display face** — bundling a font adds ~200KB and needs a CJK
-   fallback for 空. Bundle, or use the platform serif?
+1. **Brand blue** — ~~open~~ **answered by the showcase**: `#4A90E2` is kept as
+   brand and static fallback, with ambient extraction layered over content
+   surfaces and `#B48CFF` as its companion. Not in conflict.
+2. **Serif display face** — narrowed: the showcase specifies **Cormorant
+   Garamond**. Still to decide whether to *bundle* it (OFL, ~200KB subset, and
+   it has **no CJK coverage**, so 空 needs a platform-serif fallback) or
+   approximate it with the platform serif. Recommendation: bundle a
+   Latin-only subset and let the fallback chain handle CJK.
 3. **Discover as a pager page** vs. reachable only from a glyph.
 4. **Phasing** — land the shell now (before Phase 2 builds screens on the old
    one), or after?

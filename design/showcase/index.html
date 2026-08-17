@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sora — a progress-first media player UI/UX design specification. Replacing the Tachiyomi lineage with a resume-first shell." />
+  <title>Sora · UI/UX Design Specification</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#08090c',
+            ink2: '#0b0d12',
+            ink3: '#11141b',
+            paper: '#e8e6df',
+            'paper-muted': '#a8a69f',
+            accent: '#4a90e2',
+            'accent-soft': '#7fb0ee',
+          },
+          fontFamily: {
+            display: ['"Cormorant Garamond"', 'ui-serif', 'Georgia', 'serif'],
+            sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    html, body {
+      background: #08090c;
+      color: #e8e6df;
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      scroll-behavior: smooth;
+    }
+
+    ::selection {
+      background: rgba(74, 144, 226, 0.35);
+      color: #ffffff;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+
+    .ambient-glow {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(120px);
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .hairline {
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.12) 20%, rgba(255,255,255,0.12) 80%, transparent);
+      height: 1px;
+    }
+
+    @keyframes slow-pan {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    .animated-underline {
+      background: linear-gradient(90deg, rgba(74,144,226,0.2), rgba(74,144,226,0.9), rgba(180,140,255,0.8), rgba(74,144,226,0.2));
+      background-size: 300% 100%;
+      animation: slow-pan 8s linear infinite;
+      height: 1px;
+    }
+
+    .prose-code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.85em;
+      color: #d8d4c8;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+    }
+
+    .grain::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      mix-blend-mode: overlay;
+    }
+
+    .pull-quote {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 300;
+      font-style: italic;
+      letter-spacing: -0.01em;
+    }
+
+    .section-target { scroll-margin-top: 100px; }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(8,9,12,0.92);
+      backdrop-filter: blur(24px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .lightbox.open { opacity: 1; pointer-events: auto; }
+    .lightbox img {
+      max-width: 92vw; max-height: 90vh; object-fit: contain;
+      border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 80px rgba(74,144,226,0.15);
+      transform: scale(0.95); transition: transform 0.35s ease;
+    }
+    .lightbox.open img { transform: scale(1); }
+
+    /* Honour the OS reduced-motion setting. The spec makes this a hard
+       requirement for the app (§6); the showcase should not violate its own
+       rule. */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .animated-underline { animation: none; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="grain relative min-h-screen overflow-x-hidden bg-ink text-paper">
+
+  <!-- ==================== AMBIENT GLOWS ==================== -->
+  <div class="ambient-glow pointer-events-none fixed -left-40 top-0 h-[560px] w-[560px]" style="background:radial-gradient(circle,#4a90e2 0%,transparent 70%)"></div>
+  <div class="ambient-glow pointer-events-none fixed right-0 top-[40vh] h-[500px] w-[500px] opacity-30" style="background:radial-gradient(circle,#b48cff 0%,transparent 70%)"></div>
+
+  <!-- ==================== LIGHTBOX ==================== -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Full size concept render" onclick="this.classList.remove('open')">
+    <img src="" alt="Full view" id="lightbox-img" />
+  </div>
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-ink/70 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-3 md:px-10">
+      <div class="flex items-center gap-3">
+        <div class="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-[#7a5cf0]">
+          <span class="font-display text-sm font-medium text-white">S</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="font-display text-[15px] tracking-wide text-white/90">Sora</span>
+          <span class="hidden text-[11px] uppercase tracking-[0.18em] text-white/40 sm:inline">Design Spec</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="hidden items-center gap-2 md:flex">
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400"></span>
+          <span class="text-[11px] uppercase tracking-[0.2em] text-white/50">Proposed · Pending approval</span>
+        </div>
+        <span class="font-mono text-[11px] text-white/40">v0.1 / Phase 1a</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN LAYOUT ==================== -->
+  <div class="mx-auto flex max-w-[1400px] pt-[56px]">
+
+    <!-- ========== SIDE RAIL ========== -->
+    <aside class="sticky top-[56px] hidden h-[calc(100vh-56px)] w-56 shrink-0 self-start py-10 pl-10 pr-4 lg:block">
+      <div class="mb-6">
+        <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/30">Contents</p>
+      </div>
+      <nav class="space-y-1" id="rail-nav">
+        <a href="#problem" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="problem">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">01</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">The problem</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#direction" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="direction">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">02</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Direction</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#navigation" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="navigation">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">03</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Navigation</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#screens" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="screens">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">04</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Screens</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#visual" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="visual">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">05</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Visual language</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#accessibility" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="accessibility">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">06</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Accessibility</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#code" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="code">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">07</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Code impact</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+        <a href="#open" class="rail-link group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors" data-section="open">
+          <span class="rail-num font-mono text-[10px] tracking-[0.15em] transition-colors text-white/30 group-hover:text-white/60">08</span>
+          <span class="rail-label text-[13px] transition-colors text-white/50 group-hover:text-white/90">Open questions</span>
+          <span class="rail-dot ml-auto hidden h-px w-4 bg-accent"></span>
+        </a>
+      </nav>
+      <div class="mt-10 rounded-lg border border-white/5 bg-white/[0.02] p-4">
+        <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Reference</p>
+        <p class="mt-2 text-[12px] leading-relaxed text-white/60">Renders live in <span class="prose-code">concepts/</span>. No Compose code implements this yet.</p>
+      </div>
+    </aside>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="min-w-0 flex-1 px-6 pb-32 pt-10 md:px-10 md:pt-16 lg:pr-16">
+
+      <!-- ======================== HERO ======================== -->
+      <section class="relative pb-20 pt-10 md:pt-16">
+        <!-- Eyebrow -->
+        <div class="mb-8 flex items-center gap-4">
+          <div class="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1">
+            <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+            <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">Status: proposed</span>
+          </div>
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">UI/UX · Design Specification</span>
+        </div>
+
+        <!-- Title -->
+        <h1 class="font-display text-[clamp(72px,14vw,200px)] font-light leading-[0.88] tracking-[-0.03em] text-white">
+          Sora<span class="text-white/30">.</span>
+        </h1>
+
+        <div class="mt-8 grid gap-10 md:grid-cols-[1.4fr_1fr]">
+          <div>
+            <p class="max-w-xl text-[17px] leading-relaxed text-white/70">
+              A resume-first media player that asks a different question than the apps it replaces. Not <em class="text-white/90">"what do I own?"</em> — but <em class="text-white/90">"what do I continue?"</em>
+            </p>
+            <div class="mt-10">
+              <div class="animated-underline mb-6 w-full max-w-md"></div>
+              <blockquote class="pull-quote max-w-2xl text-[clamp(28px,3.4vw,44px)] leading-[1.15] text-white">
+                Sora opens on the single thing you are most likely to tap.<br/>
+                <span class="text-white/50">Everything else is one gesture away.</span>
+              </blockquote>
+              <p class="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">— § 1 · The core insight</p>
+            </div>
+          </div>
+          <div class="relative">
+            <div class="relative overflow-hidden rounded-2xl border border-white/5 cursor-pointer" onclick="openLightbox('../../concepts/01-continuum.jpg')">
+              <img src="../../concepts/01-continuum.jpg" alt="Continuum home screen concept" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent"></div>
+              <div class="absolute bottom-4 left-4 right-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">Concept 01</p>
+                <p class="mt-1 font-display text-lg text-white">Continuum — the queue.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat row -->
+        <div class="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/5 bg-white/5 sm:grid-cols-4">
+          <div class="bg-ink p-5"><p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Zero bottom bar</p><p class="mt-2 font-display text-2xl text-white">removed</p></div>
+          <div class="bg-ink p-5"><p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Modes</p><p class="mt-2 font-display text-2xl text-white">Continuum · Canvas</p></div>
+          <div class="bg-ink p-5"><p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Migration</p><p class="mt-2 font-display text-2xl text-white">none required</p></div>
+          <div class="bg-ink p-5"><p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Palette</p><p class="mt-2 font-display text-2xl text-white">ambient + #08090C</p></div>
+        </div>
+      </section>
+
+
+      <!-- ======================== §01 THE PROBLEM ======================== -->
+      <section id="problem" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">01</span>
+          <div class="flex-1 pb-2">
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">The problem being solved</h2>
+          </div>
+        </div>
+
+        <div class="mt-10 grid gap-12 md:grid-cols-[1.2fr_1fr]">
+          <div class="space-y-6 text-[15px] leading-relaxed text-white/75">
+            <p>The Phase 1a shell looked like Tachiyomi/Aniyomi. That was not a styling accident — it was <span class="text-white">information architecture</span>.</p>
+            <p>The app shipped with:</p>
+            <ul class="space-y-2 pl-5">
+              <li class="relative pl-4 text-white/75"><span class="absolute left-0 top-[0.6em] h-px w-2 bg-accent"></span>a bottom navigation bar,</li>
+              <li class="relative pl-4 text-white/75"><span class="absolute left-0 top-[0.6em] h-px w-2 bg-accent"></span>a top-level destination literally called <span class="prose-code">Library</span>,</li>
+              <li class="relative pl-4 text-white/75"><span class="absolute left-0 top-[0.6em] h-px w-2 bg-accent"></span>whose content is a grid of covers sorted by title.</li>
+            </ul>
+            <p>Every app built on that skeleton reads the same regardless of colour or corner radius, because the skeleton <em>is</em> the identity. Restyling it does not help. The fix is to change what the home screen is <em class="text-white">about</em>.</p>
+          </div>
+          <div class="relative">
+            <div class="sticky top-28 rounded-2xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-6">
+              <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Tachiyomi's grid answers</p>
+              <p class="mt-3 font-display text-3xl text-white/40 line-through decoration-white/30">"What do I own?"</p>
+              <div class="my-6 h-px bg-white/10"></div>
+              <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Sora's user already knows.</p>
+              <p class="mt-3 font-display text-3xl text-white">"What do I continue?"</p>
+              <p class="mt-4 text-[13px] leading-relaxed text-white/55"><span class="prose-code">MediaUnit</span> stores <span class="prose-code">progressPercent</span>, <span class="prose-code">currentPage</span>/<span class="prose-code">totalPages</span> and <span class="prose-code">lastPositionMs</span>. The resume queue is a query over data that already exists.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ======================== §02 DIRECTION ======================== -->
+      <section id="direction" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">02</span>
+          <div class="flex-1 pb-2">
+            <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">Two complementary modes</p>
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Direction</h2>
+          </div>
+        </div>
+
+        <p class="mt-8 max-w-2xl text-[15px] leading-relaxed text-white/70">Two surfaces, chosen because they answer different questions. One for what you already own, one for what you don't yet know.</p>
+
+        <!-- Mode cards -->
+        <div class="mt-12 grid gap-6 md:grid-cols-2">
+          <!-- Continuum -->
+          <div class="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
+            <div class="relative aspect-[16/10] overflow-hidden">
+              <img src="../../concepts/01-continuum.jpg" alt="Continuum" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent"></div>
+              <div class="ambient-glow absolute -bottom-20 left-1/2 h-48 w-48 -translate-x-1/2 opacity-40" style="background:radial-gradient(circle,#4a90e2,transparent 70%)"></div>
+              <div class="absolute left-5 top-5"><span class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/70">Home · your content</span></div>
+            </div>
+            <div class="p-6">
+              <p class="font-display text-3xl font-light tracking-tight text-white">Continuum</p>
+              <p class="mt-2 pull-quote text-xl text-white/60">"Where was I?"</p>
+              <p class="mt-4 text-[14px] leading-relaxed text-white/60">A progress-first queue. Cover art is sized by <em class="text-white">relevance</em>, not grid position. The most-resumable item is the largest element on screen.</p>
+            </div>
+          </div>
+          <!-- Canvas -->
+          <div class="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
+            <div class="relative aspect-[16/10] overflow-hidden">
+              <img src="../../concepts/03-canvas.jpg" alt="Canvas" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent"></div>
+              <div class="ambient-glow absolute -bottom-20 left-1/2 h-48 w-48 -translate-x-1/2 opacity-40" style="background:radial-gradient(circle,#b48cff,transparent 70%)"></div>
+              <div class="absolute left-5 top-5"><span class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/70">AniList discovery</span></div>
+            </div>
+            <div class="p-6">
+              <p class="font-display text-3xl font-light tracking-tight text-white">Canvas</p>
+              <p class="mt-2 pull-quote text-xl text-white/60">"What's out there?"</p>
+              <p class="mt-4 text-[14px] leading-relaxed text-white/60">Full-bleed, one title at a time, poster-gallery. Correct for unfamiliar titles you are evaluating; deliberately <em class="text-white">not</em> used for the library.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rejected: Shelf -->
+        <div class="mt-16 rounded-2xl border border-white/5 bg-white/[0.02] p-6 md:p-8">
+          <div class="flex items-start justify-between gap-6">
+            <div>
+              <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-rose-400/80">Considered · Rejected</p>
+              <p class="mt-2 font-display text-2xl text-white/90">02 · Shelf</p>
+            </div>
+            <span class="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">not for MVP</span>
+          </div>
+          <p class="mt-4 max-w-2xl text-[14px] leading-relaxed text-white/60">Physical-media skeuomorphism. Highest novelty, but ages badly, fits manga far better than anime, and depends on spine artwork AniList does not reliably provide. Recorded here so the decision is not relitigated by accident.</p>
+        </div>
+      </section>
+
+
+      <!-- ======================== §03 NAVIGATION ======================== -->
+      <section id="navigation" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">03</span>
+          <div class="flex-1 pb-2">
+            <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">— no bottom bar</p>
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Navigation model</h2>
+          </div>
+        </div>
+
+        <p class="mt-8 max-w-2xl text-[15px] leading-relaxed text-white/70">
+          <span class="text-white">The bottom navigation bar is removed.</span> It is the single strongest visual signature of the Tachiyomi lineage, and removing it forces every other decision to be genuinely different. Home and Discover are a two-page horizontal pager — the primary switch is a thumb swipe. Only two glyphs persist: avatar (top-left) and search (top-right).
+        </p>
+
+        <!-- Surfaces table -->
+        <div class="mt-12">
+          <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Replaced by</p>
+          <div class="mt-4 overflow-x-auto rounded-xl border border-white/5">
+            <div class="grid min-w-[640px] grid-cols-[1fr_1.2fr_1.3fr] gap-px bg-white/5">
+              <div class="bg-ink px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Surface</div>
+              <div class="bg-ink px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Reached by</div>
+              <div class="bg-ink px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Rationale</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Home (queue)</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">app launch</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">The default and the point of the app</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Discover</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">horizontal swipe left→right, or the compass glyph</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">A peer of home, not a tab</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Search</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">pull down on home</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">Muscle-memory gesture; costs zero permanent chrome</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Filters</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">horizontal chip row inside home</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">A filter, not a destination</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Settings</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">avatar glyph, top-right</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">Infrequent; does not deserve a permanent slot</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Detail</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">tap any card</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">Shared-element transition from cover</div>
+
+              <div class="bg-ink px-4 py-4 font-display text-lg text-white">Player / Reader</div>
+              <div class="bg-ink px-4 py-4 font-mono text-[12px] text-white/70">tap resume</div>
+              <div class="bg-ink px-4 py-4 text-[13px] text-white/60">Full-screen, zero chrome</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adaptive -->
+        <div class="mt-16">
+          <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Adaptive behaviour · WindowSizeClass</p>
+          <div class="mt-4 grid gap-4 md:grid-cols-3">
+            <div class="group relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-5">
+              <div class="flex items-center justify-between">
+                <p class="font-display text-2xl text-white">Compact</p>
+                <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">phone</span>
+              </div>
+              <p class="mt-4 text-[13px] leading-relaxed text-white/65">Single column. Hero card + horizontal rails. Pager for Home/Discover.</p>
+              <div class="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-accent/10 blur-2xl transition-opacity group-hover:opacity-60"></div>
+            </div>
+            <div class="group relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-5">
+              <div class="flex items-center justify-between">
+                <p class="font-display text-2xl text-white">Medium</p>
+                <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">small tablet</span>
+              </div>
+              <p class="mt-4 text-[13px] leading-relaxed text-white/65">Two-pane: queue list (⅓) + hero detail (⅔). Narrow icon-only rail, ~72dp, no labels.</p>
+              <div class="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-accent/10 blur-2xl transition-opacity group-hover:opacity-60"></div>
+            </div>
+            <div class="group relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-5">
+              <div class="flex items-center justify-between">
+                <p class="font-display text-2xl text-white">Expanded</p>
+                <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">large tablet</span>
+              </div>
+              <p class="mt-4 text-[13px] leading-relaxed text-white/65">Same two-pane, wider hero, rails become a multi-column poster wall.</p>
+              <div class="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-accent/10 blur-2xl transition-opacity group-hover:opacity-60"></div>
+            </div>
+          </div>
+          <p class="mt-4 text-[13px] italic text-white/50">The icon-only rail at medium/expanded is deliberate: a <em>labelled</em> rail is just a bottom bar rotated 90°, and would reintroduce the look we are removing.</p>
+        </div>
+      </section>
+
+
+      <!-- ======================== §04 SCREENS ======================== -->
+      <section id="screens" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">04</span>
+          <div class="flex-1 pb-2">
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Screens</h2>
+          </div>
+        </div>
+
+        <!-- 4.1 Home -->
+        <div class="mt-20 grid gap-10 md:grid-cols-[1fr_1.1fr]">
+          <div>
+            <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-accent">§ 4.1</p>
+            <h3 class="mt-3 font-display text-[clamp(30px,3.4vw,44px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Home — the queue</h3>
+            <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Concept 01 · Continuum</p>
+            <div class="mt-6 space-y-4">
+              <p class="text-[14px] leading-relaxed text-white/70">Vertical scroll, three bands:</p>
+              <div class="flex gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <span class="font-display text-3xl font-light leading-none text-accent">1</span>
+                <div>
+                  <p class="font-display text-lg text-white">Hero — 'Continue'</p>
+                  <p class="mt-1 text-[13px] leading-relaxed text-white/60">~45% of viewport. Full-bleed artwork, rounded, with a thin progress line across the bottom edge and an ambient glow bleeding into the background. One tap resumes playback/reading directly — it does <em class="text-white">not</em> go to the detail screen. This is the app's primary action.</p>
+                </div>
+              </div>
+              <div class="flex gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <span class="font-display text-3xl font-light leading-none text-accent">2</span>
+                <div>
+                  <p class="font-display text-lg text-white">Rails — 'Continue reading' / 'Continue watching'</p>
+                  <p class="mt-1 text-[13px] leading-relaxed text-white/60">Horizontal LazyRows of medium cards, each with a thin progress indicator. Split by media type so a manga reader is never forced past anime.</p>
+                </div>
+              </div>
+              <div class="flex gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <span class="font-display text-3xl font-light leading-none text-accent">3</span>
+                <div>
+                  <p class="font-display text-lg text-white">Rail — 'Jump back in'</p>
+                  <p class="mt-1 text-[13px] leading-relaxed text-white/60">Started but stale (untouched &gt; 14 days). Separated because "resume episode 4 of 12" and "you abandoned this in March" are different intents.</p>
+                </div>
+              </div>
+              <div class="rounded-xl border border-accent/30 bg-white/[0.02] p-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">Empty state</p>
+                <p class="mt-2 text-[13px] leading-relaxed text-white/70">The hero becomes a single full-width invitation to pick a folder — the SAF entry point — instead of an empty grid.</p>
+              </div>
+              <div class="rounded-xl border border-amber-400/30 bg-white/[0.02] p-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-400/80">Ordering (explicit)</p>
+                <p class="mt-2 text-[13px] leading-relaxed text-white/70"><span class="prose-code">lastPositionMs</span>/<span class="prose-code">currentPage</span> recency, weighted by completion — a unit at 80% outranks one at 5%. Fully-watched units drop out; the <em>next</em> unit in that series takes their place.</p>
+              </div>
+            </div>
+          </div>
+          <div class="relative">
+            <div class="sticky top-28 overflow-hidden rounded-2xl border border-white/5 cursor-pointer" onclick="openLightbox('../../concepts/01-continuum.jpg')">
+              <img src="../../concepts/01-continuum.jpg" alt="Home — the queue" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4.2 Detail -->
+        <div class="mt-20 grid gap-10 md:grid-cols-[1fr_1.1fr]">
+          <div>
+            <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-accent">§ 4.2</p>
+            <h3 class="mt-3 font-display text-[clamp(30px,3.4vw,44px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Detail</h3>
+            <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Concept 04 · Continuum detail</p>
+            <div class="mt-6 space-y-4">
+              <ul class="space-y-2 pl-1">
+                <li class="flex gap-3 text-[14px] leading-relaxed text-white/70"><span class="mt-2 h-px w-3 shrink-0 bg-white/30"></span><span>Top ~45%: full-bleed key art fading to black, arriving via <span class="text-white">shared-element transition</span> from the tapped cover.</span></li>
+                <li class="flex gap-3 text-[14px] leading-relaxed text-white/70"><span class="mt-2 h-px w-3 shrink-0 bg-white/30"></span><span>Large thin-serif title; one compact metadata row (year · type · rating · genres). AniList synopsis is <span class="text-white">collapsed to 3 lines</span> behind "more" — it is reference material, not the reason you opened the screen.</span></li>
+                <li class="flex gap-3 text-[14px] leading-relaxed text-white/70"><span class="mt-2 h-px w-3 shrink-0 bg-white/30"></span><span>One wide <span class="text-white">Resume</span> pill, labelled with the actual next unit ("Resume · Episode 4"), never a generic "Play".</span></li>
+                <li class="flex gap-3 text-[14px] leading-relaxed text-white/70"><span class="mt-2 h-px w-3 shrink-0 bg-white/30"></span><span>Unit list: number, title, thin progress line. Watched rows dim rather than vanish. The in-progress row is visually distinct.</span></li>
+                <li class="flex gap-3 text-[14px] leading-relaxed text-white/70"><span class="mt-2 h-px w-3 shrink-0 bg-white/30"></span><span><span class="text-white">Volume units</span> show <span class="prose-code">142/310</span> prominently — since a volume spans multiple sessions.</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="relative">
+            <div class="sticky top-28 overflow-hidden rounded-2xl border border-white/5 cursor-pointer" onclick="openLightbox('../../concepts/04-continuum-detail.jpg')">
+              <img src="../../concepts/04-continuum-detail.jpg" alt="Detail" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4.3 Discover -->
+        <div class="mt-20 grid gap-10 md:grid-cols-[1fr_1.1fr]">
+          <div>
+            <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-accent">§ 4.3</p>
+            <h3 class="mt-3 font-display text-[clamp(30px,3.4vw,44px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Discover — Canvas</h3>
+            <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Concept 03 · Canvas</p>
+            <div class="mt-6 space-y-4">
+              <p class="text-[14px] leading-relaxed text-white/70">Full-bleed poster per title, vertical swipe between titles, horizontal swipe between shelves (Trending / Seasonal / Recommended). Metadata sits over a bottom scrim. One action: <span class="text-white">Add to library</span>.</p>
+              <p class="mt-4 text-[14px] leading-relaxed text-white/60">For unfamiliar titles the artwork <em>is</em> the information. This is also where AniList's rate limit is friendliest — one title on screen means one prefetch ahead, not a grid of 30 requests.</p>
+            </div>
+          </div>
+          <div class="relative">
+            <div class="sticky top-28 overflow-hidden rounded-2xl border border-white/5 cursor-pointer" onclick="openLightbox('../../concepts/03-canvas.jpg')">
+              <img src="../../concepts/03-canvas.jpg" alt="Discover — Canvas" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4.4 Player -->
+        <div class="mt-20">
+          <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-accent">§ 4.4</p>
+          <h3 class="mt-3 font-display text-[clamp(30px,3.4vw,44px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Player and Reader</h3>
+          <div class="mt-6 max-w-2xl">
+            <p class="text-[14px] leading-relaxed text-white/70">Unchanged in intent from the brief; both are zero-chrome and full-screen. The design system applies only to their overlay controls: same type scale, same accent, controls fade after 3s. Detailed in their own phases.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ======================== §05 VISUAL LANGUAGE ======================== -->
+      <section id="visual" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">05</span>
+          <div class="flex-1 pb-2">
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Visual language</h2>
+          </div>
+        </div>
+
+        <!-- Colour -->
+        <div class="mt-14">
+          <h3 class="font-display text-3xl font-light text-white">Colour</h3>
+          <div class="mt-8 grid gap-6 md:grid-cols-2">
+            <div class="overflow-hidden rounded-2xl border border-white/10">
+              <div class="flex h-32 items-end p-5" style="background:#08090C;border:1px solid rgba(255,255,255,0.04)">
+                <div class="text-white/90">
+                  <p class="font-mono text-[10px] uppercase tracking-[0.22em] opacity-70">#08090C</p>
+                  <p class="font-display text-3xl">Base (ink)</p>
+                </div>
+              </div>
+              <div class="bg-ink p-5"><p class="text-[13px] leading-relaxed text-white/65">Near-black, not Material elevated greys. True black makes artwork the only light source and is cheaper on OLED.</p></div>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-white/5">
+              <div class="flex h-32 items-end p-5" style="background:#4A90E2">
+                <div class="text-[#08090c]">
+                  <p class="font-mono text-[10px] uppercase tracking-[0.22em] opacity-70">#4A90E2</p>
+                  <p class="font-display text-3xl">Brand / fallback</p>
+                </div>
+              </div>
+              <div class="bg-ink p-5"><p class="text-[13px] leading-relaxed text-white/65">Static fallback seeded for pre-Android-12 devices and any cover whose extraction fails.</p></div>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-white/5">
+              <div class="flex h-32 items-end p-5" style="background:linear-gradient(135deg,#4a90e2 0%,#b48cff 50%,#f0a0c0 100%)">
+                <div class="text-[#08090c]">
+                  <p class="font-mono text-[10px] uppercase tracking-[0.22em] opacity-70">dynamic</p>
+                  <p class="font-display text-3xl">Ambient accent</p>
+                </div>
+              </div>
+              <div class="bg-ink p-5"><p class="text-[13px] leading-relaxed text-white/65">Dominant colour of the current cover, desaturated and darkened. The app's mood follows the content.</p></div>
+            </div>
+          </div>
+
+          <div class="mt-8 rounded-2xl border border-white/5 p-6">
+            <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Ambient extraction in context</p>
+            <div class="relative mt-4 h-48 w-full overflow-hidden rounded-xl border border-white/5 bg-ink2">
+              <img src="../../concepts/01-continuum.jpg" alt="Ambient glow in context" class="h-full w-full object-cover opacity-40" />
+              <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-transparent"></div>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <p class="pull-quote text-2xl text-white/80">the app's mood follows the content</p>
+              </div>
+            </div>
+          </div>
+          <p class="mt-4 text-[13px] italic text-white/55">Dynamic colour (Material You) applies to <em>system</em> surfaces only; content surfaces use extraction so the app is not at the mercy of the wallpaper.</p>
+        </div>
+
+        <!-- Type -->
+        <div class="mt-20">
+          <h3 class="font-display text-3xl font-light text-white">Type</h3>
+          <p class="mt-3 max-w-2xl text-[14px] leading-relaxed text-white/65">Deliberate two-family contrast, since single-family Material type is part of the generic look.</p>
+          <div class="mt-8 grid gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/5 md:grid-cols-2">
+            <div class="bg-ink p-8">
+              <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Display · titles</p>
+              <p class="mt-5 font-display text-[88px] font-light leading-[0.9] tracking-tight text-white">Sora</p>
+              <div class="my-5 h-px bg-white/10"></div>
+              <div class="flex items-baseline justify-between">
+                <p class="text-[12px] text-white/70">Cormorant Garamond</p>
+                <p class="font-mono text-[10px] text-white/40">Light 300</p>
+              </div>
+              <p class="mt-4 text-[13px] leading-relaxed text-white/60">Thin high-contrast serif. Editorial, unexpected in this category, and the reason the renders read as 'premium' rather than 'utility'.</p>
+            </div>
+            <div class="bg-ink p-8">
+              <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Body · labels · UI</p>
+              <p class="mt-5 font-sans text-[44px] font-medium leading-[0.9] tracking-tight text-white">Resume · Episode 4</p>
+              <div class="my-5 h-px bg-white/10"></div>
+              <div class="flex items-baseline justify-between">
+                <p class="text-[12px] text-white/70">Inter</p>
+                <p class="font-mono text-[10px] text-white/40">Regular 400 / Medium 500</p>
+              </div>
+              <p class="mt-4 text-[13px] leading-relaxed text-white/60">Platform sans, small and quiet. Titles are large — a series title at 32sp+ is a deliberate statement that content outranks chrome.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shape / Depth / Motion -->
+        <div class="mt-20 grid gap-6 md:grid-cols-3">
+          <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+            <p class="font-display text-5xl font-light text-accent/70">I</p>
+            <p class="mt-3 font-display text-2xl text-white">Shape</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">Cards: <span class="prose-code">16dp</span> radius. Hero: <span class="prose-code">24dp</span>.</p>
+          </div>
+          <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+            <p class="font-display text-5xl font-light text-accent/70">II</p>
+            <p class="mt-3 font-display text-2xl text-white">Depth</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">From glow and scrim, not Material elevation shadows.</p>
+          </div>
+          <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+            <p class="font-display text-5xl font-light text-accent/70">III</p>
+            <p class="mt-3 font-display text-2xl text-white">Motion</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">Shared-element cover → detail; hero parallax on scroll; content cross-fades, chrome never slides. Respects <span class="prose-code">Settings.Global.ANIMATOR_DURATION_SCALE</span> for reduced-motion users. Predictive back (Android 14+) hooked into the shared-element return.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ======================== §06 ACCESSIBILITY ======================== -->
+      <section id="accessibility" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">06</span>
+          <div class="flex-1 pb-2">
+            <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">non-negotiable</p>
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Accessibility</h2>
+          </div>
+        </div>
+        <p class="mt-6 max-w-2xl text-[14px] leading-relaxed text-white/65">Easy to lose in a dark cinematic design. Every item below is a hard requirement, not a guideline.</p>
+
+        <div class="mt-10 space-y-3">
+          <div class="group flex items-start gap-6 rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-colors hover:border-white/10">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-accent">01</span>
+            <div class="flex-1"><p class="font-display text-xl text-white">Contrast over artwork</p><p class="mt-1 text-[13px] leading-relaxed text-white/60">Text over artwork always sits on a scrim guaranteeing ≥ 4.5:1; the scrim is computed against the extracted colour, not assumed.</p></div>
+            <svg class="mt-1 h-5 w-5 shrink-0 text-emerald-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="group flex items-start gap-6 rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-colors hover:border-white/10">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-accent">02</span>
+            <div class="flex-1"><p class="font-display text-xl text-white">Ambient luminance</p><p class="mt-1 text-[13px] leading-relaxed text-white/60">Ambient accent is luminance-clamped so a low-contrast cover cannot produce unreadable accents.</p></div>
+            <svg class="mt-1 h-5 w-5 shrink-0 text-emerald-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="group flex items-start gap-6 rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-colors hover:border-white/10">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-accent">03</span>
+            <div class="flex-1"><p class="font-display text-xl text-white">Glyphs are labelled</p><p class="mt-1 text-[13px] leading-relaxed text-white/60">Every glyph-only control (avatar, search, compass) carries a contentDescription.</p></div>
+            <svg class="mt-1 h-5 w-5 shrink-0 text-emerald-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="group flex items-start gap-6 rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-colors hover:border-white/10">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-accent">04</span>
+            <div class="flex-1"><p class="font-display text-xl text-white">Touch targets</p><p class="mt-1 text-[13px] leading-relaxed text-white/60">≥ 48dp even where the visual is smaller.</p></div>
+            <svg class="mt-1 h-5 w-5 shrink-0 text-emerald-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="group flex items-start gap-6 rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-colors hover:border-white/10">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-accent">05</span>
+            <div class="flex-1"><p class="font-display text-xl text-white">Gesture parity</p><p class="mt-1 text-[13px] leading-relaxed text-white/60">Gesture navigation has a non-gesture equivalent: swipe-to-Discover is also the compass glyph; pull-to-search is also the search glyph.</p></div>
+            <svg class="mt-1 h-5 w-5 shrink-0 text-emerald-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <p class="mt-8 text-[13px] italic text-white/50"><span class="text-rose-400/80">⚠</span> No function is gesture-only — this is the most common failure mode of chrome-less designs.</p>
+      </section>
+
+
+      <!-- ======================== §07 CODE CHANGES ======================== -->
+      <section id="code" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">07</span>
+          <div class="flex-1 pb-2">
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">What this changes in existing code</h2>
+          </div>
+        </div>
+        <div class="mt-10 overflow-x-auto rounded-xl border border-white/5">
+          <div class="grid min-w-[560px] grid-cols-[1.2fr_1.8fr] gap-px bg-white/5">
+            <div class="bg-ink px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">File</div>
+            <div class="bg-ink px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Change</div>
+            <div class="bg-ink px-4 py-4 font-mono text-[13px] text-accent-soft">app/ui/SoraApp.kt</div>
+            <div class="bg-ink px-4 py-4 text-[13px] leading-relaxed text-white/70">Replace NavigationSuiteScaffold with a custom adaptive shell</div>
+            <div class="bg-ink px-4 py-4 font-mono text-[13px] text-accent-soft">app/navigation/SoraDestination.kt</div>
+            <div class="bg-ink px-4 py-4 text-[13px] leading-relaxed text-white/70">TopLevelDestination enum is deleted; Home/Discover become pager pages</div>
+            <div class="bg-ink px-4 py-4 font-mono text-[13px] text-accent-soft">app/navigation/SoraNavHost.kt</div>
+            <div class="bg-ink px-4 py-4 text-[13px] leading-relaxed text-white/70">Routes stay; hosting changes</div>
+            <div class="bg-ink px-4 py-4 font-mono text-[13px] text-accent-soft">app/ui/theme/*</div>
+            <div class="bg-ink px-4 py-4 text-[13px] leading-relaxed text-white/70">Add ambient extraction, near-black base, serif display family</div>
+            <div class="bg-ink px-4 py-4 font-mono text-[13px] text-accent-soft">core-database</div>
+            <div class="bg-ink px-4 py-4 text-[13px] leading-relaxed text-white/70">No schema change — the queue is a new DAO query over existing columns</div>
+          </div>
+        </div>
+        <p class="mt-6 max-w-2xl text-[13px] leading-relaxed text-white/60"><span class="prose-code">MediaUnit</span>/<span class="prose-code">LibraryEntry</span> need no migration, which is the main reason this redesign is affordable now rather than after Phase 5.</p>
+      </section>
+
+
+      <!-- ======================== §08 OPEN QUESTIONS ======================== -->
+      <section id="open" class="section-target scroll-mt-24 py-20 md:py-28">
+        <div class="flex items-end gap-6">
+          <span class="font-display text-[80px] font-light leading-none tracking-[-0.02em] text-white/15 md:text-[110px]">08</span>
+          <div class="flex-1 pb-2">
+            <h2 class="font-display text-[clamp(32px,4vw,52px)] font-light leading-[1.05] tracking-[-0.01em] text-white">Open questions</h2>
+          </div>
+        </div>
+        <div class="mt-12 grid gap-5 md:grid-cols-2">
+          <div class="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition-colors hover:border-white/15">
+            <div class="flex items-start justify-between gap-4">
+              <p class="font-display text-5xl font-light text-white/15 transition-colors group-hover:text-accent/40">01</p>
+              <span class="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-300/90">recommended · keep extraction</span>
+            </div>
+            <p class="mt-5 font-display text-2xl text-white">Brand blue</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">Ambient extraction largely overrides #4A90E2 in-app. Keep extraction (recommended), or keep the blue dominant?</p>
+          </div>
+          <div class="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition-colors hover:border-white/15">
+            <div class="flex items-start justify-between gap-4">
+              <p class="font-display text-5xl font-light text-white/15 transition-colors group-hover:text-accent/40">02</p>
+              <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">?</span>
+            </div>
+            <p class="mt-5 font-display text-2xl text-white">Serif display face</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">Bundling a font adds ~200KB and needs a CJK fallback for 空. Bundle, or use the platform serif?</p>
+          </div>
+          <div class="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition-colors hover:border-white/15">
+            <div class="flex items-start justify-between gap-4">
+              <p class="font-display text-5xl font-light text-white/15 transition-colors group-hover:text-accent/40">03</p>
+              <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">?</span>
+            </div>
+            <p class="mt-5 font-display text-2xl text-white">Discover as a pager page</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">vs. reachable only from a glyph.</p>
+          </div>
+          <div class="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition-colors hover:border-white/15">
+            <div class="flex items-start justify-between gap-4">
+              <p class="font-display text-5xl font-light text-white/15 transition-colors group-hover:text-accent/40">04</p>
+              <span class="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-300/90">recommended · land now</span>
+            </div>
+            <p class="mt-5 font-display text-2xl text-white">Phasing</p>
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60">Land the shell now (before Phase 2 builds screens on the old one), or after?</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ======================== FOOTER ======================== -->
+      <footer class="mt-28 border-t border-white/5 pt-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <p class="pull-quote max-w-xl text-xl text-white/60">"Sora opens on the single thing you are most likely to tap. Everything else is one gesture away."</p>
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/30">— End of spec</p>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // --- IntersectionObserver for side-rail active state ---
+    (function () {
+      var sections = ['problem','direction','navigation','screens','visual','accessibility','code','open'];
+      var links = document.querySelectorAll('.rail-link');
+
+      function setActive(id) {
+        links.forEach(function (link) {
+          var sec = link.getAttribute('data-section');
+          var num = link.querySelector('.rail-num');
+          var label = link.querySelector('.rail-label');
+          var dot = link.querySelector('.rail-dot');
+          if (sec === id) {
+            num.classList.remove('text-white/30'); num.classList.add('text-accent');
+            label.classList.remove('text-white/50'); label.classList.add('text-white');
+            dot.classList.remove('hidden');
+          } else {
+            num.classList.add('text-white/30'); num.classList.remove('text-accent');
+            label.classList.add('text-white/50'); label.classList.remove('text-white');
+            dot.classList.add('hidden');
+          }
+        });
+      }
+
+      var els = sections.map(function (id) { return document.getElementById(id); });
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+      els.forEach(function (el) { if (el) obs.observe(el); });
+      setActive('problem');
+    })();
+
+    // --- Lightbox ---
+    function openLightbox(src) {
+      var lb = document.getElementById('lightbox');
+      var img = document.getElementById('lightbox-img');
+      img.src = src;
+      lb.classList.add('open');
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('open');
+    });
+  </script>
+</body>
+</html>

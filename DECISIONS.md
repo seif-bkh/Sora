@@ -113,3 +113,16 @@ each with a one-line rationale. Newest phase last.
 | 50 | **`.env` added to `.gitignore`.** | The compose setup suggests putting `ANILIST_CLIENT_ID` there; without the ignore rule that credential would be committable. |
 | 51 | **No emulator in the image.** | Requires KVM and `--privileged`, a poor trade for a build image. Build here, install to a device or host emulator with `adb install`. |
 | 52 | **UNVERIFIED: the image has not been built or run.** | Docker is not installed in the agent sandbox and all container registries are unreachable, so this could not be executed end to end. YAML, all 7 RUN blocks, and the entrypoint's three guard paths were validated statically instead. First real run is on the user's machine. |
+
+---
+
+## Design — showcase and tokens
+
+| # | Decision | Rationale |
+|---|---|---|
+| 53 | **`design/showcase/index.html` committed as the canonical design reference.** | A rendered showcase communicates intent better than prose, and committing it means it survives sandbox resets and stays the artifact both sides point at. Static HTML; not part of the Gradle build. |
+| 54 | **Image paths rewritten to `../../concepts/`.** | The showcase was authored assuming `concepts/` sat beside it. Moving it to `design/showcase/` broke every render; paths now resolve from the repo root, verified by serving the page locally. |
+| 55 | **Palette extended beyond the single brand blue:** `paper #E8E6DF` for text (not pure white), `#B48CFF` violet as a companion glow, `ink2/ink3` raised surfaces. | Warm off-white on near-black reads as film rather than terminal and lowers glare in the dark. Two-hue ambient washes are richer than tinting one hue. |
+| 56 | **Type stack fixed: Cormorant Garamond 300 (display), Inter (UI), JetBrains Mono (numerals).** | Mono for episode numbers and `142/310` gives tabular figures, so progress counters do not jitter as digits change - a real defect in a progress-first UI. |
+| 57 | **`prefers-reduced-motion` support added to the showcase.** | The spec makes reduced-motion a hard requirement for the app (§6); the document asserting that rule should not itself ignore it. |
+| 58 | **Open question 1 (brand blue) closed.** | The showcase keeps `#4A90E2` as brand/fallback while layering ambient extraction over content surfaces - the two were never in conflict. |
