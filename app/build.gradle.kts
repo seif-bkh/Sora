@@ -95,11 +95,21 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
 
-    // Adaptive layout: WindowSizeClass drives bottom-nav vs nav-rail.
+    // Adaptive layout: WindowSizeClass drives the compact pager vs the
+    // medium/expanded two-pane + icon rail (DESIGN.md §3).
     implementation(libs.androidx.compose.material3.window.size)
-    implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.window)
+
+    // HorizontalPager (foundation) is the shell's primary navigation, and
+    // SharedTransitionLayout (animation) carries covers into the detail
+    // screen. Both come via the BOM but are declared explicitly because the
+    // code calls them directly.
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.animation)
+
+    // Ambient colour extraction from cover art.
+    implementation(libs.androidx.palette)
 
     implementation(libs.kotlinx.coroutines.android)
 
@@ -108,6 +118,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
+    // Compose UI tests run under Robolectric so the shell's pager is covered
+    // by `./gradlew test` in CI, where no emulator is available.
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

@@ -3,73 +3,73 @@ package com.sora.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * Static fallback palette, used on devices without Material You dynamic colour
- * (below Android 12) or when the user disables it.
+ * Sora's colour tokens.
  *
- * Derived from the Sora brand seed #4A90E2 - the mid-stop of the sky gradient
- * in the launcher icon. Tonal steps follow the Material 3 tonal-palette
- * convention (light scheme uses tone 40 for primary, dark uses tone 80).
+ * Values come from the design showcase (`design/showcase/index.html`), which
+ * is the canonical reference — see DESIGN.md §5. Two choices there are
+ * deliberate and easy to "fix" by accident:
+ *
+ *  * [Paper] is a warm off-white, NOT pure #FFFFFF. Against near-black it
+ *    reads as film rather than terminal, and lowers glare in a dark room.
+ *  * [Ink] is near-black rather than a Material elevated grey, so cover art
+ *    is the only light source on screen (and it is cheaper on OLED).
  */
 
-// --- Brand seed ------------------------------------------------------------
+// --- Surfaces --------------------------------------------------------------
+/** App background. */
+val Ink = Color(0xFF08090C)
+
+/** Slightly raised surface (cards over the background). */
+val Ink2 = Color(0xFF0B0D12)
+
+/** Highest raised surface, used sparingly. */
+val Ink3 = Color(0xFF11141B)
+
+// --- Content ---------------------------------------------------------------
+/** Primary text. Warm off-white — see the note above. */
+val Paper = Color(0xFFE8E6DF)
+
+/** Secondary text and inactive labels. */
+val PaperMuted = Color(0xFFA8A69F)
+
+// --- Accents ---------------------------------------------------------------
+/** Brand seed, and the static fallback when ambient extraction is unavailable. */
+val Accent = Color(0xFF4A90E2)
+
+/** Lighter accent for links and small emphasis. */
+val AccentSoft = Color(0xFF7FB0EE)
+
+/**
+ * Companion hue for ambient washes. Glows interpolate between [Accent] and
+ * this rather than tinting a single hue, which is what stops extraction from
+ * looking accidental.
+ */
+val AccentViolet = Color(0xFFB48CFF)
+
+// --- Brand gradient (launcher icon, splash) --------------------------------
 val SoraSkyTop = Color(0xFF5BA3D0)
-val SoraSkyMid = Color(0xFF4A90E2) // seed
+val SoraSkyMid = Color(0xFF4A90E2)
 val SoraSkyDeep = Color(0xFF2C5AA0)
 
-// --- Light scheme ----------------------------------------------------------
-val LightPrimary = Color(0xFF2C5AA0)
-val LightOnPrimary = Color(0xFFFFFFFF)
-val LightPrimaryContainer = Color(0xFFD6E3FF)
-val LightOnPrimaryContainer = Color(0xFF001B3E)
+// --- Semantic --------------------------------------------------------------
+val ErrorRed = Color(0xFFFF6B6B)
+val ErrorRedDark = Color(0xFF93000A)
+val SuccessGreen = Color(0xFF5BD1A0)
 
-val LightSecondary = Color(0xFF565E71)
-val LightOnSecondary = Color(0xFFFFFFFF)
-val LightSecondaryContainer = Color(0xFFDAE2F9)
-val LightOnSecondaryContainer = Color(0xFF131C2C)
+// --- Hairlines -------------------------------------------------------------
+/**
+ * Separators are low-alpha white hairlines rather than Material elevation
+ * shadows (DESIGN.md §5: "depth from glow and scrim").
+ */
+val Hairline = Color(0x14FFFFFF)      // ~8%
+val HairlineStrong = Color(0x1AFFFFFF) // ~10%
 
-val LightTertiary = Color(0xFF6F5575)
-val LightOnTertiary = Color(0xFFFFFFFF)
-val LightTertiaryContainer = Color(0xFFF9D8FE)
-val LightOnTertiaryContainer = Color(0xFF28132F)
-
-val LightBackground = Color(0xFFFDFBFF)
-val LightOnBackground = Color(0xFF1A1B1F)
-val LightSurface = Color(0xFFFDFBFF)
+// --- Light theme -----------------------------------------------------------
+// The brief requires full light-theme support even though dark is the default.
+// These are the inverse of the dark tokens rather than a separate design.
+val LightSurface = Color(0xFFFDFCF9)
+val LightSurfaceRaised = Color(0xFFF4F2EC)
 val LightOnSurface = Color(0xFF1A1B1F)
-val LightSurfaceVariant = Color(0xFFE0E2EC)
-val LightOnSurfaceVariant = Color(0xFF44464F)
-val LightOutline = Color(0xFF74777F)
-
-val LightError = Color(0xFFBA1A1A)
-val LightOnError = Color(0xFFFFFFFF)
-val LightErrorContainer = Color(0xFFFFDAD6)
-val LightOnErrorContainer = Color(0xFF410002)
-
-// --- Dark scheme (app default - see Theme.kt) ------------------------------
-val DarkPrimary = Color(0xFFA9C7FF)
-val DarkOnPrimary = Color(0xFF002F65)
-val DarkPrimaryContainer = Color(0xFF00458E)
-val DarkOnPrimaryContainer = Color(0xFFD6E3FF)
-
-val DarkSecondary = Color(0xFFBEC6DC)
-val DarkOnSecondary = Color(0xFF283041)
-val DarkSecondaryContainer = Color(0xFF3E4759)
-val DarkOnSecondaryContainer = Color(0xFFDAE2F9)
-
-val DarkTertiary = Color(0xFFDCBCE1)
-val DarkOnTertiary = Color(0xFF3F2845)
-val DarkTertiaryContainer = Color(0xFF573E5C)
-val DarkOnTertiaryContainer = Color(0xFFF9D8FE)
-
-val DarkBackground = Color(0xFF111318)
-val DarkOnBackground = Color(0xFFE3E2E6)
-val DarkSurface = Color(0xFF111318)
-val DarkOnSurface = Color(0xFFE3E2E6)
-val DarkSurfaceVariant = Color(0xFF44464F)
-val DarkOnSurfaceVariant = Color(0xFFC4C6D0)
-val DarkOutline = Color(0xFF8E9099)
-
-val DarkError = Color(0xFFFFB4AB)
-val DarkOnError = Color(0xFF690005)
-val DarkErrorContainer = Color(0xFF93000A)
-val DarkOnErrorContainer = Color(0xFFFFDAD6)
+val LightOnSurfaceMuted = Color(0xFF5A5B60)
+val LightAccent = Color(0xFF2C5AA0)
+val LightTertiary = Color(0xFF5B3E8F)

@@ -14,26 +14,35 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.sora.app.ui.theme.MicroLabel
 import com.sora.app.ui.theme.SoraTheme
 
 /**
  * Temporary screen used by every route until its feature module is built.
  *
- * Exists so Phase 1a produces a genuinely navigable app rather than a blank
+ * Exists so each phase produces a genuinely navigable app rather than a blank
  * shell - each placeholder names the phase that will replace it.
+ *
+ * The surface is transparent so the shell's ambient wash shows through;
+ * an opaque surface here would flatten the whole background treatment.
  */
 @Composable
 fun PlaceholderScreen(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    microLabel: String? = null,
     onPrimaryAction: (() -> Unit)? = null,
     primaryActionLabel: String? = null,
 ) {
-    Surface(modifier = modifier.fillMaxSize()) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = Color.Transparent,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -42,6 +51,14 @@ fun PlaceholderScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            if (microLabel != null) {
+                Text(
+                    text = microLabel,
+                    style = MicroLabel,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineMedium,
@@ -75,8 +92,9 @@ fun PlaceholderScreen(
 private fun PlaceholderScreenPreview() {
     SoraTheme {
         PlaceholderScreen(
-            title = "Library",
+            title = "Continue",
             description = "Local and server content will appear here.",
+            microLabel = "HOME",
             onPrimaryAction = {},
             primaryActionLabel = "Add a folder",
         )

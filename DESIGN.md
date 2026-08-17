@@ -207,11 +207,17 @@ the generic look:
 
 - **Display/titles:** **Cormorant Garamond Light (300)** — a thin
   high-contrast serif. Editorial, unexpected in this category, and the reason
-  the renders read as "premium" rather than "utility".
-- **Body/labels/UI:** **Inter** (400/500), small and quiet.
-- **Monospace:** **JetBrains Mono** for numerals and technical labels —
-  episode numbers, `142/310`, timestamps. Tabular figures stop progress
-  counters from jittering as digits change.
+  the renders read as "premium" rather than "utility". **Bundled at 47 KB**
+  (see §8 Q2).
+- **Body/labels/UI:** the **platform sans** (`FontFamily.SansSerif`), small
+  and quiet. The showcase used Inter over a web font link; on Android the
+  platform sans is close enough at label sizes that bundling a second family
+  is not worth the download, and it inherits the user's font-scale settings.
+- **Monospace:** `FontFamily.Monospace` for numerals and technical labels —
+  episode numbers, `142/310`, timestamps. This is functional, not decorative:
+  proportional digits make a progress counter visibly jitter as the number
+  changes. The platform monospace has tabular figures by definition, so
+  bundling JetBrains Mono would buy nothing but megabytes.
 - Small labels are uppercase with wide tracking (~0.22em); this is a
   signature of the showcase and should carry into the app.
 - Titles are large. A series title at 32sp+ is a deliberate statement that
@@ -263,11 +269,22 @@ redesign is affordable now rather than after Phase 5.
 1. **Brand blue** — ~~open~~ **answered by the showcase**: `#4A90E2` is kept as
    brand and static fallback, with ambient extraction layered over content
    surfaces and `#B48CFF` as its companion. Not in conflict.
-2. **Serif display face** — narrowed: the showcase specifies **Cormorant
-   Garamond**. Still to decide whether to *bundle* it (OFL, ~200KB subset, and
-   it has **no CJK coverage**, so 空 needs a platform-serif fallback) or
-   approximate it with the platform serif. Recommendation: bundle a
-   Latin-only subset and let the fallback chain handle CJK.
-3. **Discover as a pager page** vs. reachable only from a glyph.
-4. **Phasing** — land the shell now (before Phase 2 builds screens on the old
-   one), or after?
+2. **Serif display face** — ~~open~~ **resolved: bundle it.** The showcase
+   specifies **Cormorant Garamond**, and upstream `google/fonts` ships *only*
+   a variable TTF (1,195,560 B, wght 300–700). `tools/fonts/build_fonts.py`
+   instances it to wght=300 (773,016 B) and subsets to Latin + punctuation,
+   producing **47,148 B / 236 glyphs** — an order of magnitude smaller than
+   the ~200 KB this document originally guessed, which settles the question.
+   The generator is committed rather than just the binary, so the artefact is
+   reproducible and auditable.
+
+   Cormorant has **no CJK**, so 空 in the wordmark resolves through Android's
+   platform-serif fallback chain. That is intended, and the build script
+   asserts the absence so nobody "fixes" it by bundling a CJK face.
+   SIL OFL 1.1 requires the licence to ship with the font:
+   `app/src/main/assets/licenses/cormorant_garamond_OFL.txt`.
+3. **Discover as a pager page** vs. reachable only from a glyph — ~~open~~
+   **resolved: pager page.** Two pages, swipe or compass glyph.
+4. **Phasing** — ~~open~~ **resolved: land the shell first.** Building Phase 2
+   screens against a shell that is about to be deleted would mean writing them
+   twice; the shell is cheap now and expensive later.

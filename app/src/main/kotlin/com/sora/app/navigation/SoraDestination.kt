@@ -1,57 +1,24 @@
 package com.sora.app.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.ui.graphics.vector.ImageVector
-
-/**
- * Top-level destinations, i.e. the ones reachable from the bottom bar / nav
- * rail. Detail, player and reader screens are NOT here: they are pushed onto
- * the back stack and hide the navigation chrome.
- */
-enum class TopLevelDestination(
-    val route: String,
-    val label: String,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
-) {
-    LIBRARY(
-        route = SoraRoutes.LIBRARY,
-        label = "Library",
-        selectedIcon = Icons.AutoMirrored.Filled.MenuBook,
-        unselectedIcon = Icons.AutoMirrored.Outlined.MenuBook,
-    ),
-    DISCOVERY(
-        route = SoraRoutes.DISCOVERY,
-        label = "Discover",
-        selectedIcon = Icons.Filled.Explore,
-        unselectedIcon = Icons.Outlined.Explore,
-    ),
-    SETTINGS(
-        route = SoraRoutes.SETTINGS,
-        label = "Settings",
-        selectedIcon = Icons.Filled.Settings,
-        unselectedIcon = Icons.Outlined.Settings,
-    ),
-}
-
 /**
  * Route constants.
  *
- * Kept as plain strings for Phase 1a. Type-safe navigation (Kotlin
- * serialization routes) is a natural upgrade once real arguments exist -
- * noted in DECISIONS.md.
+ * NOTE: there is deliberately no `TopLevelDestination` enum any more. That
+ * enum existed to populate a bottom navigation bar, which DESIGN.md §3
+ * removes — it was the strongest visual signature of the Tachiyomi lineage.
+ *
+ * Home and Discover are now pages of a [androidx.compose.foundation.pager]
+ * pager inside a single route, not sibling destinations. Everything else is
+ * pushed onto the back stack.
  */
 object SoraRoutes {
-    const val LIBRARY = "library"
-    const val DISCOVERY = "discovery"
-    const val SETTINGS = "settings"
+
+    /** Hosts the Home ⇄ Discover pager. The app's start destination. */
+    const val SHELL = "shell"
+
     const val AUTH = "auth"
+    const val SETTINGS = "settings"
+    const val SEARCH = "search"
 
     // Parameterised destinations, wired up in later phases.
     const val DETAILS = "details/{entryId}"
@@ -61,4 +28,24 @@ object SoraRoutes {
     fun details(entryId: String) = "details/$entryId"
     fun player(unitId: String) = "player/$unitId"
     fun reader(unitId: String) = "reader/$unitId"
+}
+
+/**
+ * The two pages of the shell pager.
+ *
+ * Ordered: Home is index 0 and the landing page; Discover sits to its right,
+ * reached by swiping left→right (or the compass glyph — DESIGN.md §6 requires
+ * every gesture to have a non-gesture equivalent).
+ */
+enum class ShellPage(val index: Int) {
+    HOME(0),
+    DISCOVER(1),
+    ;
+
+    companion object {
+        const val COUNT = 2
+
+        fun fromIndex(index: Int): ShellPage =
+            entries.firstOrNull { it.index == index } ?: HOME
+    }
 }
